@@ -43,6 +43,43 @@
         </logger>
     </springProfile>
 
+    <!-- Local debug environment configuration -->
+    <springProfile name="local">
+        <root level="INFO">
+            <appender-ref ref="STDOUT"/>
+        </root>
+
+        <!-- Debug SQL during local development -->
+        <logger name="com.iflytek.astron.console.hub.mapper" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <!-- MyBatis Plus SQL logging -->
+        <logger name="com.baomidou.mybatisplus" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <!-- Redis operation logging -->
+        <logger name="org.springframework.data.redis" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <!-- Application core logging -->
+        <logger name="com.iflytek.astron.console" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <!-- Spring Framework logging -->
+        <logger name="org.springframework.web" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <!-- HikariCP logging -->
+        <logger name="com.zaxxer.hikari" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+    </springProfile>
+
     <!-- Test environment configuration -->
     <springProfile name="test">
         <root level="INFO">
@@ -73,6 +110,12 @@
     </springProfile>
 
     <!-- Common logging configuration -->
+    
+    <!-- Default fallback configuration (if no profile matches) -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+    
     <!-- Database connection pool logging -->
     <logger name="com.zaxxer.hikari" level="WARN"/>
 
