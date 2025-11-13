@@ -18,7 +18,9 @@ spring:
       minimum-idle: 5
       connection-timeout: 30000
       idle-timeout: 600000
-      max-lifetime: 1800000
+      max-lifetime: 580000
+      connection-test-query: SELECT 1
+      validation-timeout: 5000
   
   # Redis 配置
   data:

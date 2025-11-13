@@ -118,7 +118,10 @@ public class WorkflowController {
             point = "Workflow Details",
             description = "Workflow Details")
     public WorkflowVo detail(@RequestParam @NotBlank String id, @RequestParam(required = false) Long spaceId) {
-        return workflowService.detail(id, spaceId);
+        log.info("===== DEBUG: GET /workflow - id={}, spaceId={}", id, spaceId);
+        WorkflowVo result = workflowService.detail(id, spaceId);
+        log.info("===== DEBUG: GET /workflow - result={}", result != null ? "found" : "null");
+        return result;
     }
 
     /**

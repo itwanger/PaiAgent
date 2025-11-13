@@ -385,9 +385,14 @@ services:
     restart: always
 
   # Workflow Service
+  # Workflow Service - 支持 Python/Java 双版本切换
+  # 通过环境变量 WORKFLOW_VERSION 控制: python (默认) 或 java
   core-workflow:
-    image: ghcr.io/iflytek/astron-agent/core-workflow:${ASTRON_AGENT_VERSION:-latest}
+    image: ${WORKFLOW_VERSION:-python}
     container_name: astron-agent-core-workflow
+    build:
+      context: ${WORKFLOW_BUILD_CONTEXT:-}
+      dockerfile: ${WORKFLOW_DOCKERFILE:-Dockerfile}
     environment:
       RUNTIME_ENV: "${RUNTIME_ENV:-dev}"
       SERVICE_PORT: "${CORE_WORKFLOW_PORT:-7880}"
@@ -429,6 +434,12 @@ services:
       AGENT_BASE_URL: "${AGENT_BASE_URL:-http://core-agent:${CORE_AGENT_PORT}}"
       PGSQL_BASE_URL: "${PGSQL_BASE_URL:-http://core-database:${CORE_DATABASE_PORT}}"
       RPA_BASE_URL: "${RPA_BASE_URL:-http://core-rpa:${CORE_RPA_PORT}}"
+      # Java Workflow 专用环境变量
+      SERVER_PORT: "${CORE_WORKFLOW_PORT:-7880}"
+      SPRING_APPLICATION_NAME: "core-workflow"
+      MODEL_SERVICE_URL: "${MODEL_SERVICE_URL:-http://console-hub:8080}"
+      AITOOLS_URL: "${AITOOLS_URL:-http://core-aitools:18668}"
+      JAVA_OPTS: "${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -441,6 +452,7 @@ services:
     volumes:
       - ./config/workflow/config.env:/opt/core/workflow/config.env
       - ./config/workflow/logs/:/opt/core/logs
+      - ./config/workflow-java/logs/:/app/logs  # Java workflow logs
     networks:
       - astron-agent-network
     restart: always
