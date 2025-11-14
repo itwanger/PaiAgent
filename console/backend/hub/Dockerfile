@@ -1,6 +1,29 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /backend
 
+# Configure Maven to use Aliyun mirror for faster downloads in China
+RUN mkdir -p /root/.m2 && \
+    echo '<?xml version="1.0" encoding="UTF-8"?>\n\
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"\n\
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n\
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0\n\
+          https://maven.apache.org/xsd/settings-1.2.0.xsd">\n\
+  <mirrors>\n\
+    <mirror>\n\
+      <id>aliyun-central</id>\n\
+      <mirrorOf>central</mirrorOf>\n\
+      <name>Aliyun Maven Central Mirror</name>\n\
+      <url>https://maven.aliyun.com/repository/central</url>\n\
+    </mirror>\n\
+    <mirror>\n\
+      <id>aliyun-public</id>\n\
+      <mirrorOf>*</mirrorOf>\n\
+      <name>Aliyun Maven Public Mirror</name>\n\
+      <url>https://maven.aliyun.com/repository/public</url>\n\
+    </mirror>\n\
+  </mirrors>\n\
+</settings>' > /root/.m2/settings.xml
+
 COPY console/backend/pom.xml ./
 COPY console/backend/commons/pom.xml commons/pom.xml
 COPY console/backend/hub/pom.xml hub/pom.xml

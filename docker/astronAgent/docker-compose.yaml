@@ -135,7 +135,10 @@ services:
 
   # Tenant Service
   core-tenant:
-    image: ghcr.io/iflytek/astron-agent/core-tenant:${ASTRON_AGENT_VERSION:-latest}
+    image: core-tenant:local
+    build:
+      context: ../../
+      dockerfile: core/tenant/Dockerfile
     container_name: astron-agent-core-tenant
     environment:
       SERVICE_PORT: "${CORE_TENANT_PORT:-5052}"
@@ -167,7 +170,10 @@ services:
   # Memory Database Service
 
   core-database:
-    image: ghcr.io/iflytek/astron-agent/core-database:${ASTRON_AGENT_VERSION:-latest}
+    image: core-database:local
+    build:
+      context: ../../
+      dockerfile: core/memory/database/Dockerfile
     container_name: astron-agent-core-database
     environment:
       SERVICE_PORT: "${CORE_DATABASE_PORT:-7990}"
@@ -196,7 +202,10 @@ services:
 
   # RPA Plugin Service
   core-rpa:
-    image: ghcr.io/iflytek/astron-agent/core-rpa:${ASTRON_AGENT_VERSION:-latest}
+    image: core-rpa:local
+    build:
+      context: ../../
+      dockerfile: core/plugin/rpa/Dockerfile
     container_name: astron-agent-core-rpa
     environment:
       SERVICE_PORT: "${CORE_RPA_PORT:-17198}"
@@ -224,7 +233,10 @@ services:
 
   # Link Plugin Service
   core-link:
-    image: ghcr.io/iflytek/astron-agent/core-link:${ASTRON_AGENT_VERSION:-latest}
+    image: core-link:local
+    build:
+      context: ../../
+      dockerfile: core/plugin/link/Dockerfile
     container_name: astron-agent-core-link
     environment:
       SERVICE_PORT: "${CORE_LINK_PORT:-18888}"
@@ -259,7 +271,10 @@ services:
 
   # AI Tools Plugin Service
   core-aitools:
-    image: ghcr.io/iflytek/astron-agent/core-aitools:${ASTRON_AGENT_VERSION:-latest}
+    image: core-aitools:local
+    build:
+      context: ../../
+      dockerfile: core/plugin/aitools/Dockerfile
     container_name: astron-agent-core-aitools
     environment:
       SERVICE_PORT: "${CORE_AITOOLS_PORT:-18668}"
@@ -293,7 +308,10 @@ services:
 
   # Agent Service
   core-agent:
-    image: ghcr.io/iflytek/astron-agent/core-agent:${ASTRON_AGENT_VERSION:-latest}
+    image: core-agent:local
+    build:
+      context: ../../
+      dockerfile: core/agent/Dockerfile
     container_name: astron-agent-core-agent
     environment:
       SERVICE_LOCATION: "${SERVICE_LOCATION:-hf}"
@@ -356,7 +374,10 @@ services:
 
   # Knowledge Base Service
   core-knowledge:
-    image: ghcr.io/iflytek/astron-agent/core-knowledge:${ASTRON_AGENT_VERSION:-latest}
+    image: core-knowledge:local
+    build:
+      context: ../../
+      dockerfile: core/knowledge/Dockerfile
     container_name: astron-agent-core-knowledge
     environment:
       SERVICE_PORT: "${CORE_KNOWLEDGE_PORT:-20010}"
@@ -388,11 +409,11 @@ services:
   # Workflow Service - 支持 Python/Java 双版本切换
   # 通过环境变量 WORKFLOW_VERSION 控制: python (默认) 或 java
   core-workflow:
-    image: ${WORKFLOW_VERSION:-python}
+    image: core-workflow:local
     container_name: astron-agent-core-workflow
     build:
-      context: ${WORKFLOW_BUILD_CONTEXT:-}
-      dockerfile: ${WORKFLOW_DOCKERFILE:-Dockerfile}
+      context: ../../
+      dockerfile: core/workflow/Dockerfile
     environment:
       RUNTIME_ENV: "${RUNTIME_ENV:-dev}"
       SERVICE_PORT: "${CORE_WORKFLOW_PORT:-7880}"
@@ -484,7 +505,10 @@ services:
 
   # Console Frontend
   console-frontend:
-    image: ghcr.io/iflytek/astron-agent/console-frontend:${ASTRON_AGENT_VERSION:-latest}
+    image: console-frontend:local
+    build:
+      context: ../../
+      dockerfile: console/frontend/Dockerfile
     container_name: astron-agent-console-frontend
     environment:
       CONSOLE_CASDOOR_URL: "${CONSOLE_CASDOOR_URL:-}"
@@ -499,7 +523,10 @@ services:
 
 #   Console Hub Service
   console-hub:
-    image: console-hub-debug:latest
+    image: console-hub:local
+    build:
+      context: ../../
+      dockerfile: console/backend/hub/Dockerfile
     container_name: astron-agent-console-hub
     # Map container's localhost to host machine, to access MinIO and other services from both inside and outside the container
     extra_hosts:  # 临时注释掉，避免连接 Redis 时指向宿主机

@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.npm \
 
 # 再拷贝源码，进行构建
 COPY console/frontend/ ./
-RUN npm run build-prod
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build-prod
 
 
 #############################################
