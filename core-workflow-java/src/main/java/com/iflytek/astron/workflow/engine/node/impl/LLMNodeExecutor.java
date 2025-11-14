@@ -14,6 +14,7 @@ import java.util.Map;
 /**
  * LLM node executor
  * Calls the model service to execute LLM inference
+ * Supports both "node-llm" and "spark-llm" node types
  */
 @Slf4j
 @Component
@@ -28,6 +29,14 @@ public class LLMNodeExecutor extends AbstractNodeExecutor {
     @Override
     public String getNodeType() {
         return "node-llm";
+    }
+    
+    /**
+     * Check if this executor can handle the given node type
+     * Supports both "node-llm" and "spark-llm"
+     */
+    public boolean supports(String nodeType) {
+        return "node-llm".equals(nodeType) || "spark-llm".equals(nodeType);
     }
     
     @Override
@@ -51,12 +60,19 @@ public class LLMNodeExecutor extends AbstractNodeExecutor {
         
         String llmOutput = modelServiceClient.chatCompletion(modelId, resolvedPrompt);
         
+        // Determine output name from node's output definition
+        String outputName = "llm_output"; // default
+        if (node.getData().getOutputs() != null && !node.getData().getOutputs().isEmpty()) {
+            outputName = node.getData().getOutputs().get(0).getName();
+            log.debug("Using output name from definition: {}", outputName);
+        }
+        
         Map<String, Object> outputs = new HashMap<>();
-        outputs.put("llm_output", llmOutput);
+        outputs.put(outputName, llmOutput);
         
-        log.info("LLM node completed: outputLength={}", llmOutput.length());
+        log.info("LLM node completed: outputName={}, outputLength={}", outputName, llmOutput.length());
         
-        callback.sendNodeOutput(node.getId(), "llm_output", llmOutput);
+        callback.sendNodeOutput(node.getId(), outputName, llmOutput);
         callback.sendNodeEnd(node.getId(), "LLM");
         
         return outputs;
@@ -75,10 +91,18 @@ public class LLMNodeExecutor extends AbstractNodeExecutor {
     }
     
     private String getPrompt(Map<String, Object> nodeParam) {
+        // Try "prompt" first (for node-llm)
         Object promptObj = nodeParam.get("prompt");
-        if (promptObj == null) {
-            throw new IllegalArgumentException("Missing 'prompt' in LLM node parameters");
+        if (promptObj != null) {
+            return String.valueOf(promptObj);
         }
-        return String.valueOf(promptObj);
+        
+        // Try "template" (for spark-llm)
+        Object templateObj = nodeParam.get("template");
+        if (templateObj != null) {
+            return String.valueOf(templateObj);
+        }
+        
+        throw new IllegalArgumentException("Missing 'prompt' or 'template' in LLM node parameters");
     }
 }

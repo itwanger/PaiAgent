@@ -33,7 +33,7 @@ echo ""
 
 # 确保 Python 版本运行
 echo -e "${YELLOW}[2/3] 启动 Python Workflow...${NC}"
-docker compose up -d core-workflow-python
+docker compose up -d core-workflow
 echo -e "${GREEN}✓ Python Workflow 已启动${NC}"
 echo ""
 
@@ -61,5 +61,5 @@ echo ""
 echo -e "${BLUE}服务信息：${NC}"
 echo -e "  版本: ${GREEN}Python${NC}"
 echo -e "  端口: ${GREEN}7880${NC}"
-echo -e "  日志: ${YELLOW}docker logs -f astron-agent-core-workflow-python${NC}"
+echo -e "  日志: ${YELLOW}docker logs -f astron-agent-core-workflow${NC}"
 echo ""

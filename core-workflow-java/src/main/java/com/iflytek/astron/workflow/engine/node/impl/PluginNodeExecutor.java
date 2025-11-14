@@ -14,6 +14,7 @@ import java.util.Map;
 /**
  * Plugin node executor
  * Calls external plugin/tool services (e.g., voice synthesis via core-aitools)
+ * Supports both "node-plugin" and "plugin" node types
  */
 @Slf4j
 @Component
@@ -28,6 +29,14 @@ public class PluginNodeExecutor extends AbstractNodeExecutor {
     @Override
     public String getNodeType() {
         return "node-plugin";
+    }
+    
+    /**
+     * Check if this executor can handle the given node type
+     * Supports both "node-plugin" and "plugin"
+     */
+    public boolean supports(String nodeType) {
+        return "node-plugin".equals(nodeType) || "plugin".equals(nodeType);
     }
     
     @Override
@@ -58,12 +67,25 @@ public class PluginNodeExecutor extends AbstractNodeExecutor {
                                                       StreamCallback callback) throws Exception {
         String pluginId = getString(nodeParam, "pluginId");
         String operationId = getString(nodeParam, "operationId");
-        String vcn = getString(nodeParam, "vcn");
-        Integer speed = getInteger(nodeParam, "speed", 50);
         
+        // Get vcn from inputs (resolved from node inputs)
+        String vcn = getString(inputs, "vcn");
+        if (vcn == null) {
+            vcn = getString(nodeParam, "vcn"); // fallback to nodeParam
+        }
+        
+        Integer speed = getInteger(inputs, "speed", 50);
+        
+        // Try to get text from inputs
         Object textObj = inputs.get("text");
+        
+        // If not in inputs, try to get from "input" field (for plugin node type)
         if (textObj == null) {
-            throw new IllegalArgumentException("Missing 'text' input for voice synthesis");
+            textObj = inputs.get("input");
+        }
+        
+        if (textObj == null) {
+            throw new IllegalArgumentException("Missing 'text' or 'input' for voice synthesis");
         }
         String text = String.valueOf(textObj);
         

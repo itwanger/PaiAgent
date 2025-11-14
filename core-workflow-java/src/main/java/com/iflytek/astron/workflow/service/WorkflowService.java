@@ -24,14 +24,14 @@ public class WorkflowService {
     
     /**
      * Get workflow DSL by workflow ID
-     * @param workflowId workflow ID (e.g., "184736")
+     * @param workflowId workflow ID (e.g., "184736" or "7394988637451558914")
      * @return workflow DSL
      */
     public WorkflowDSL getWorkflowDSL(String workflowId) {
         log.info("Loading workflow: {}", workflowId);
         
         LambdaQueryWrapper<WorkflowEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(WorkflowEntity::getWorkflowId, workflowId);
+        queryWrapper.eq(WorkflowEntity::getId, Long.parseLong(workflowId));
         
         WorkflowEntity entity = workflowMapper.selectOne(queryWrapper);
         
@@ -40,7 +40,12 @@ public class WorkflowService {
         }
         
         String dslData = entity.getDslData();
-        WorkflowDSL workflowDSL = JSON.parseObject(dslData, WorkflowDSL.class);
+        
+        // Parse nested "data" structure
+        com.alibaba.fastjson2.JSONObject outerJson = JSON.parseObject(dslData);
+        com.alibaba.fastjson2.JSONObject innerData = outerJson.getJSONObject("data");
+        
+        WorkflowDSL workflowDSL = innerData.to(WorkflowDSL.class);
         
         log.info("Loaded workflow: id={}, nodes={}, edges={}", 
                 workflowId, workflowDSL.getNodes().size(), workflowDSL.getEdges().size());

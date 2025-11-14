@@ -9,24 +9,24 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * Workflow entity
+ * Workflow entity - maps to workflow.flow table
  */
 @Data
-@TableName("workflow")
+@TableName("flow")
 public class WorkflowEntity {
     
     @TableId(type = IdType.AUTO)
     private Long id;
     
-    @TableField("workflow_id")
-    private String workflowId;
+    @TableField("name")
+    private String name;
     
-    @TableField("dsl_data")
+    @TableField("data")
     private String dslData;
     
-    @TableField("created_time")
+    @TableField("create_at")
     private LocalDateTime createdTime;
     
-    @TableField("updated_time")
+    @TableField("update_at")
     private LocalDateTime updatedTime;
 }

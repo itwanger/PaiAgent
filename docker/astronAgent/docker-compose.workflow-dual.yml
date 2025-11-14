@@ -5,8 +5,11 @@ services:
   
   # Python Workflow (原版本 - 生产稳定版)
   core-workflow-python:
-    image: ghcr.io/iflytek/astron-agent/core-workflow:${ASTRON_AGENT_VERSION:-latest}
+    image: core-workflow:local
     container_name: astron-agent-core-workflow-python
+    build:
+      context: ../../
+      dockerfile: core/workflow/Dockerfile
     environment:
       RUNTIME_ENV: "${RUNTIME_ENV:-dev}"
       SERVICE_PORT: "7880"
@@ -14,7 +17,7 @@ services:
       MYSQL_PORT: "${MYSQL_PORT:-3306}"
       MYSQL_USER: "${MYSQL_USER:-root}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:-root123}"
-      MYSQL_DB: "workflow_python"  # 独立数据库
+      MYSQL_DB: "workflow"  # 使用同一个数据库
       REDIS_CLUSTER_ADDR: "${REDIS_CLUSTER_ADDR}"
       REDIS_ADDR: "${REDIS_ADDR:-redis:6379}"
       REDIS_PASSWORD: "${REDIS_PASSWORD}"
@@ -57,7 +60,7 @@ services:
       MYSQL_PORT: "${MYSQL_PORT:-3306}"
       MYSQL_USER: "${MYSQL_USER:-root}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:-root123}"
-      MYSQL_DB: "workflow_java"  # 独立数据库
+      MYSQL_DB: "workflow"  # 使用Python版本同一个数据库
       
       # Redis 配置
       REDIS_HOST: "${REDIS_HOST:-redis}"

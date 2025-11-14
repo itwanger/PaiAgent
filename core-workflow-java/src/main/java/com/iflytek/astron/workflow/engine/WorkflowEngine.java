@@ -19,10 +19,12 @@ import java.util.*;
 public class WorkflowEngine {
     
     private final Map<String, NodeExecutor> nodeExecutors;
+    private final List<NodeExecutor> executorList;
     private final VariablePool variablePool;
     
     public WorkflowEngine(List<NodeExecutor> executors, VariablePool variablePool) {
         this.nodeExecutors = new HashMap<>();
+        this.executorList = executors;
         for (NodeExecutor executor : executors) {
             this.nodeExecutors.put(executor.getNodeType(), executor);
         }
@@ -120,6 +122,33 @@ public class WorkflowEngine {
         String nodeType = node.getNodeType();
         
         NodeExecutor executor = nodeExecutors.get(nodeType);
+        
+        // If no exact match, try to find a compatible executor
+        if (executor == null) {
+            for (NodeExecutor candidate : executorList) {
+                // Check LLMNodeExecutor for spark-llm
+                if (candidate instanceof com.iflytek.astron.workflow.engine.node.impl.LLMNodeExecutor) {
+                    com.iflytek.astron.workflow.engine.node.impl.LLMNodeExecutor llmExecutor = 
+                        (com.iflytek.astron.workflow.engine.node.impl.LLMNodeExecutor) candidate;
+                    if (llmExecutor.supports(nodeType)) {
+                        executor = candidate;
+                        log.info("Found compatible LLM executor for node type: {}", nodeType);
+                        break;
+                    }
+                }
+                // Check PluginNodeExecutor for plugin
+                if (candidate instanceof com.iflytek.astron.workflow.engine.node.impl.PluginNodeExecutor) {
+                    com.iflytek.astron.workflow.engine.node.impl.PluginNodeExecutor pluginExecutor = 
+                        (com.iflytek.astron.workflow.engine.node.impl.PluginNodeExecutor) candidate;
+                    if (pluginExecutor.supports(nodeType)) {
+                        executor = candidate;
+                        log.info("Found compatible Plugin executor for node type: {}", nodeType);
+                        break;
+                    }
+                }
+            }
+        }
+        
         if (executor == null) {
             throw new IllegalStateException("No executor found for node type: " + nodeType);
         }
