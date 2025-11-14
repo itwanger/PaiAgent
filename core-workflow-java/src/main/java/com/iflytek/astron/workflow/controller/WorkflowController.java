@@ -55,8 +55,21 @@ public class WorkflowController {
      */
     @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter executeWorkflow(@RequestBody WorkflowRequest request) {
+        return executeWorkflowInternal(request, false);
+    }
+    
+    @PostMapping(value = "/debug/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter debugWorkflow(@RequestBody DebugWorkflowRequest request) {
+        WorkflowRequest workflowRequest = new WorkflowRequest();
+        workflowRequest.setFlowId(request.getFlowId());
+        workflowRequest.setInputs(request.getParameters());
+        return executeWorkflowInternal(workflowRequest, true);
+    }
+    
+    private SseEmitter executeWorkflowInternal(WorkflowRequest request, boolean debugMode) {
         log.info("========================================");
-        log.info("🚀 [JAVA VERSION] Workflow execution request: flowId={}, inputs={}", request.getFlowId(), request.getInputs());
+        log.info("🚀 [JAVA VERSION] Workflow execution request: flowId={}, inputs={}, debug={}", 
+                 request.getFlowId(), request.getInputs(), debugMode);
         log.info("========================================");
         
         SseEmitter emitter = new SseEmitter(600_000L);
@@ -136,6 +149,56 @@ public class WorkflowController {
                 .data(jsonData));
     }
     
+    @PostMapping(value = "/protocol/build/{flowId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter buildWorkflow(@PathVariable String flowId) {
+        log.info("🔨 [JAVA VERSION] Workflow build/validation request: flowId={}", flowId);
+        
+        SseEmitter emitter = new SseEmitter(60_000L);
+        
+        CompletableFuture.runAsync(() -> {
+            try {
+                WorkflowDSL workflowDSL = workflowService.getWorkflowDSL(flowId);
+                
+                if (workflowDSL == null || workflowDSL.getNodes() == null || workflowDSL.getNodes().isEmpty()) {
+                    sendBuildResponse(emitter, false, "Workflow DSL is empty or invalid");
+                    emitter.complete();
+                    return;
+                }
+                
+                log.info("✅ [JAVA VERSION] Workflow validation passed: flowId={}, nodes={}", 
+                         flowId, workflowDSL.getNodes().size());
+                
+                sendBuildResponse(emitter, true, "Workflow validation successful");
+                
+                emitter.complete();
+                
+            } catch (Exception e) {
+                log.error("❌ [JAVA VERSION] Workflow build failed: flowId={}, error={}", 
+                         flowId, e.getMessage(), e);
+                try {
+                    sendBuildResponse(emitter, false, e.getMessage());
+                    emitter.completeWithError(e);
+                } catch (IOException ex) {
+                    log.error("Failed to send error response: {}", ex.getMessage());
+                }
+            }
+        });
+        
+        return emitter;
+    }
+    
+    private void sendBuildResponse(SseEmitter emitter, boolean success, String message) throws IOException {
+        String sid = "sjw" + System.currentTimeMillis() + "@java-workflow";
+        
+        Map<String, Object> response = Map.of(
+            "end_of_stream", true,
+            "sid", sid
+        );
+        
+        String jsonData = JSON.toJSONString(response);
+        emitter.send(jsonData);
+    }
+    
     @PostMapping("/protocol/update/{flowId}")
     public Result<Void> updateWorkflow(
             @PathVariable String flowId,
@@ -183,5 +246,24 @@ public class WorkflowController {
         
         @com.fasterxml.jackson.annotation.JsonProperty("regen")
         private Boolean regen;
+    }
+    
+    @Data
+    public static class DebugWorkflowRequest {
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("flow_id")
+        private String flowId;
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("parameters")
+        private Map<String, Object> parameters;
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("uid")
+        private String uid;
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("stream")
+        private Boolean stream;
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("debug")
+        private Boolean debug;
     }
 }
