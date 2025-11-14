@@ -41,7 +41,9 @@ public class WorkflowEngine {
      * @throws Exception if execution fails
      */
     public void execute(WorkflowDSL workflowDSL, Map<String, Object> inputs, StreamCallback callback) throws Exception {
-        log.info("Starting workflow execution with {} nodes", workflowDSL.getNodes().size());
+        log.info("========================================");
+        log.info("🔥 [JAVA WORKFLOW ENGINE] Starting workflow execution with {} nodes", workflowDSL.getNodes().size());
+        log.info("========================================");
         
         variablePool.clear();
         
@@ -59,7 +61,9 @@ public class WorkflowEngine {
             executeNode(node, callback);
         }
         
-        log.info("Workflow execution completed successfully");
+        log.info("========================================");
+        log.info("✅ [JAVA WORKFLOW ENGINE] Workflow execution completed successfully");
+        log.info("========================================");
     }
     
     /**

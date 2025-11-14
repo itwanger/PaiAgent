@@ -18,10 +18,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Workflow execution controller
  * Provides REST API for workflow execution with SSE streaming
+ * Compatible with Python version API: /workflow/v1/chat/completions
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/workflow")
+@RequestMapping("/workflow/v1")
 public class WorkflowController {
     
     private final WorkflowService workflowService;
@@ -35,7 +36,7 @@ public class WorkflowController {
     /**
      * Execute workflow with SSE streaming
      * 
-     * Endpoint: POST /api/workflow/chat
+     * Endpoint: POST /workflow/v1/chat/completions (compatible with Python version)
      * Request body:
      * {
      *   "flow_id": "184736",
@@ -51,9 +52,11 @@ public class WorkflowController {
      * - workflow_complete: Workflow finished
      * - error: Error occurred
      */
-    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter executeWorkflow(@RequestBody WorkflowRequest request) {
-        log.info("Workflow execution request: flowId={}, inputs={}", request.getFlowId(), request.getInputs());
+        log.info("========================================");
+        log.info("🚀 [JAVA VERSION] Workflow execution request: flowId={}, inputs={}", request.getFlowId(), request.getInputs());
+        log.info("========================================");
         
         SseEmitter emitter = new SseEmitter(600_000L);
         
@@ -66,6 +69,8 @@ public class WorkflowController {
                 workflowEngine.execute(workflowDSL, request.getInputs(), callback);
                 
                 sendEvent(emitter, "workflow_complete", Map.of("status", "success"));
+                
+                log.info("🎉 [JAVA VERSION] Workflow completed successfully!");
                 
                 emitter.complete();
                 
@@ -130,9 +135,45 @@ public class WorkflowController {
                 .data(jsonData));
     }
     
-    /**
-     * Workflow execution request
-     */
+    @PostMapping("/protocol/update/{flowId}")
+    public Map<String, Object> updateWorkflow(
+            @PathVariable String flowId,
+            @RequestBody WorkflowUpdateRequest request) {
+        log.info("🔄 [JAVA VERSION] Workflow update request: flowId={}", flowId);
+        
+        try {
+            workflowService.updateWorkflow(flowId, request);
+            
+            log.info("✅ [JAVA VERSION] Workflow updated successfully: flowId={}", flowId);
+            
+            return Map.of(
+                "success", true,
+                "message", "Workflow updated successfully"
+            );
+            
+        } catch (Exception e) {
+            log.error("❌ [JAVA VERSION] Workflow update failed: flowId={}, error={}", 
+                     flowId, e.getMessage(), e);
+            
+            return Map.of(
+                "success", false,
+                "error", e.getMessage()
+            );
+        }
+    }
+    
+    @Data
+    public static class WorkflowUpdateRequest {
+        
+        private String id;
+        private String name;
+        private String description;
+        private Map<String, Object> data;
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("app_id")
+        private String appId;
+    }
+    
     @Data
     public static class WorkflowRequest {
         

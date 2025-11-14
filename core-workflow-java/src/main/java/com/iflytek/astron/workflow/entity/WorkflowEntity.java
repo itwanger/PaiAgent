@@ -9,10 +9,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * Workflow entity - maps to workflow.flow table
+ * Workflow entity - maps to astron_console.workflow table
  */
 @Data
-@TableName("flow")
+@TableName("workflow")
 public class WorkflowEntity {
     
     @TableId(type = IdType.AUTO)
@@ -21,12 +21,18 @@ public class WorkflowEntity {
     @TableField("name")
     private String name;
     
+    @TableField("description")
+    private String description;
+    
+    @TableField("app_id")
+    private String appId;
+    
     @TableField("data")
     private String dslData;
     
-    @TableField("create_at")
+    @TableField("create_time")
     private LocalDateTime createdTime;
     
-    @TableField("update_at")
+    @TableField("update_time")
     private LocalDateTime updatedTime;
 }

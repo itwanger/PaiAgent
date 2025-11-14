@@ -45,17 +45,6 @@ public class AIToolsClient {
      * @throws IOException if API call fails
      */
     public String voiceSynthesis(String toolId, String operationId, String text, String vcn, Integer speed) throws IOException {
-        // TODO: Mock implementation for testing - remove this and uncomment real implementation
-        log.warn("Using MOCK voice synthesis for testing");
-        log.info("Mock voice synthesis: toolId={}, vcn={}, textLength={}", toolId, vcn, text.length());
-        log.debug("Mock synthesis text: {}", text.substring(0, Math.min(100, text.length())));
-        
-        String mockVoiceUrl = "http://minio:9000/audio/mock-podcast-java-intro.mp3";
-        
-        log.info("Mock voice synthesis completed: {}", mockVoiceUrl);
-        return mockVoiceUrl;
-        
-        /* Real implementation - uncomment when aitools service is properly configured
         String url = aitoolsUrl + "/api/tools/execute";
         
         Map<String, Object> requestBody = new HashMap<>();
@@ -111,6 +100,5 @@ public class AIToolsClient {
             
             throw new IOException("Unexpected response format, missing 'voice_url': " + responseBody);
         }
-        */
     }
 }

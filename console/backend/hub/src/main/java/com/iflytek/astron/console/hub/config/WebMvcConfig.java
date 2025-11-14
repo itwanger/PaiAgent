@@ -16,6 +16,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
             "/v3/api-docs/**",
             "/workflow/copyFlow",
             "/api/model/checkModelBase",
+            "/api/model/chat",  // Allow workflow engine to call model API without auth
             "/workflow/hasQaNode",
             "/workflow/version/update_channel_result",
             "/home-page/agent-square/**",

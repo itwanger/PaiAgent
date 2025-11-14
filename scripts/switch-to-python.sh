@@ -31,22 +31,37 @@ docker compose stop core-workflow-java 2>/dev/null || true
 echo -e "${GREEN}✓ Java Workflow 已停止${NC}"
 echo ""
 
-# 确保 Python 版本运行
-echo -e "${YELLOW}[2/3] 启动 Python Workflow...${NC}"
-docker compose up -d core-workflow
-echo -e "${GREEN}✓ Python Workflow 已启动${NC}"
-echo ""
-
-# 更新环境变量
-echo -e "${YELLOW}[3/3] 更新路由配置...${NC}"
+# 更新环境变量 - 必须在启动容器之前修改
+echo -e "${YELLOW}[2/5] 更新路由配置...${NC}"
 export WORKFLOW_VERSION=python
 echo "WORKFLOW_VERSION=python" > .env.workflow
-echo -e "${GREEN}✓ 已切换到 Python 版本${NC}"
+
+# 修改 .env 中的 CORE_WORKFLOW_PORT 为 7880
+if [ -f .env ]; then
+    sed -i.bak 's/^CORE_WORKFLOW_PORT=7881/CORE_WORKFLOW_PORT=7880/' .env
+    echo -e "${GREEN}✓ 已更新 .env 文件: CORE_WORKFLOW_PORT=7880${NC}"
+fi
+echo ""
+
+# 重建 Python Workflow 以加载新的环境变量
+echo -e "${YELLOW}[3/5] 重建 Python Workflow (加载端口 7880)...${NC}"
+docker compose stop core-workflow
+docker compose rm -f core-workflow
+docker compose up -d core-workflow
+echo -e "${GREEN}✓ Python Workflow 已启动 (端口 7880)${NC}"
+echo ""
+
+# 重建 console-hub 以应用新的环境变量
+echo -e "${YELLOW}[4/5] 重建 console-hub (加载路由配置)...${NC}"
+docker compose stop console-hub
+docker compose rm -f console-hub
+docker compose up -d console-hub
+echo -e "${GREEN}✓ console-hub 已重建，现在所有请求将转发到 Python Workflow (7880)${NC}"
 echo ""
 
 # 健康检查
-echo -e "${BLUE}健康检查...${NC}"
-sleep 3
+echo -e "${YELLOW}[5/5] 健康检查...${NC}"
+sleep 5
 if curl -f -s http://localhost:7880/health > /dev/null 2>&1; then
     echo -e "${GREEN}✓ Python Workflow 运行正常${NC}"
 else

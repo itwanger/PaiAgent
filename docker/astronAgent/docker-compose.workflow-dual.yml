@@ -55,12 +55,12 @@ services:
       SERVER_PORT: "7881"
       SPRING_APPLICATION_NAME: "core-workflow-java"
       
-      # 数据库配置（独立数据库）
+      # 数据库配置（使用astron_console数据库）
       MYSQL_HOST: "${MYSQL_HOST:-mysql}"
       MYSQL_PORT: "${MYSQL_PORT:-3306}"
       MYSQL_USER: "${MYSQL_USER:-root}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:-root123}"
-      MYSQL_DB: "workflow"  # 使用Python版本同一个数据库
+      MYSQL_DB: "astron_console"  # 使用astron_console数据库（workflow表在这里）
       
       # Redis 配置
       REDIS_HOST: "${REDIS_HOST:-redis}"

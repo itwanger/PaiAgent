@@ -10,7 +10,7 @@ spring:
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DB:workflow}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DB:astron_console}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:root123}
     hikari:
@@ -101,9 +101,18 @@ workflow:
   
   # 外部服务配置
   services:
-    # 模型服务地址
-    model-service-url: ${MODEL_SERVICE_URL:http://console-hub:8080}
     # AI Tools 服务地址
     aitools-url: ${AITOOLS_URL:http://core-aitools:18668}
     # Python Workflow 服务地址（用于对比参考）
     python-workflow-url: ${PYTHON_WORKFLOW_URL:http://core-workflow-python:7880}
+
+# iFlytek Spark API 配置
+spark:
+  # Spark API URL (WebSocket)
+  api-url: ${SPARK_API_URL:wss://spark-api.xf-yun.com/v3.5/chat}
+  # App ID from iFlytek Open Platform
+  app-id: ${SPARK_APP_ID:f740451b}
+  # API Key from iFlytek Open Platform
+  api-key: ${SPARK_API_KEY:ebaf9daded8d3b2cbe9a648247a87934}
+  # API Secret from iFlytek Open Platform
+  api-secret: ${SPARK_API_SECRET:ZGE0YjQ3YjNjMmEwZGZmMDEwYzI0M2Q1}

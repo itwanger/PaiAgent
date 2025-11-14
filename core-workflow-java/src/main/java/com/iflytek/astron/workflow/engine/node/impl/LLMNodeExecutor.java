@@ -4,26 +4,28 @@ import com.iflytek.astron.workflow.domain.Node;
 import com.iflytek.astron.workflow.engine.VariablePool;
 import com.iflytek.astron.workflow.engine.node.AbstractNodeExecutor;
 import com.iflytek.astron.workflow.engine.node.StreamCallback;
-import com.iflytek.astron.workflow.service.ModelServiceClient;
+import com.iflytek.astron.workflow.service.llm.SparkLLMClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * LLM node executor
- * Calls the model service to execute LLM inference
+ * Directly calls iFlytek Spark API via WebSocket (like Python's SparkChatAi)
  * Supports both "node-llm" and "spark-llm" node types
  */
 @Slf4j
 @Component
 public class LLMNodeExecutor extends AbstractNodeExecutor {
     
-    private final ModelServiceClient modelServiceClient;
+    private final SparkLLMClient sparkLLMClient;
     
-    public LLMNodeExecutor(ModelServiceClient modelServiceClient) {
-        this.modelServiceClient = modelServiceClient;
+    public LLMNodeExecutor(SparkLLMClient sparkLLMClient) {
+        this.sparkLLMClient = sparkLLMClient;
     }
     
     @Override
@@ -48,17 +50,30 @@ public class LLMNodeExecutor extends AbstractNodeExecutor {
         
         Map<String, Object> nodeParam = node.getData().getNodeParam();
         
-        Integer modelId = getModelId(nodeParam);
+        // Extract parameters from nodeParam
+        String domain = getDomain(nodeParam);
+        Double temperature = getTemperature(nodeParam);
+        Integer maxTokens = getMaxTokens(nodeParam);
         String promptTemplate = getPrompt(nodeParam);
         
+        // Resolve variables in prompt
         String resolvedPrompt = variablePool.resolve(promptTemplate);
         
-        log.info("LLM node: modelId={}, promptLength={}", modelId, resolvedPrompt.length());
+        log.info("LLM node: domain={}, temperature={}, maxTokens={}, promptLength={}", 
+                domain, temperature, maxTokens, resolvedPrompt.length());
         log.debug("LLM prompt (resolved): {}", resolvedPrompt);
         
         callback.send("llm_thinking", Map.of("nodeId", node.getId(), "prompt", resolvedPrompt));
         
-        String llmOutput = modelServiceClient.chatCompletion(modelId, resolvedPrompt);
+        // Build messages list (similar to Python version)
+        List<Map<String, String>> messages = new ArrayList<>();
+        Map<String, String> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        userMessage.put("content", resolvedPrompt);
+        messages.add(userMessage);
+        
+        // Call Spark LLM via WebSocket
+        String llmOutput = sparkLLMClient.chat(domain, temperature, maxTokens, messages);
         
         // Determine output name from node's output definition
         String outputName = "llm_output"; // default
@@ -78,16 +93,37 @@ public class LLMNodeExecutor extends AbstractNodeExecutor {
         return outputs;
     }
     
-    private Integer getModelId(Map<String, Object> nodeParam) {
-        Object modelIdObj = nodeParam.get("modelId");
-        if (modelIdObj instanceof Integer) {
-            return (Integer) modelIdObj;
-        } else if (modelIdObj instanceof String) {
-            return Integer.parseInt((String) modelIdObj);
-        } else if (modelIdObj instanceof Number) {
-            return ((Number) modelIdObj).intValue();
+    private String getDomain(Map<String, Object> nodeParam) {
+        Object domainObj = nodeParam.get("domain");
+        if (domainObj != null) {
+            return String.valueOf(domainObj);
         }
-        throw new IllegalArgumentException("Invalid modelId in LLM node: " + modelIdObj);
+        // Default domain
+        return "generalv3.5";
+    }
+    
+    private Double getTemperature(Map<String, Object> nodeParam) {
+        Object tempObj = nodeParam.get("temperature");
+        if (tempObj instanceof Number) {
+            return ((Number) tempObj).doubleValue();
+        } else if (tempObj instanceof String) {
+            return Double.parseDouble((String) tempObj);
+        }
+        // Default temperature
+        return 0.5;
+    }
+    
+    private Integer getMaxTokens(Map<String, Object> nodeParam) {
+        Object maxTokensObj = nodeParam.get("maxTokens");
+        if (maxTokensObj instanceof Integer) {
+            return (Integer) maxTokensObj;
+        } else if (maxTokensObj instanceof String) {
+            return Integer.parseInt((String) maxTokensObj);
+        } else if (maxTokensObj instanceof Number) {
+            return ((Number) maxTokensObj).intValue();
+        }
+        // Default max tokens
+        return 2048;
     }
     
     private String getPrompt(Map<String, Object> nodeParam) {

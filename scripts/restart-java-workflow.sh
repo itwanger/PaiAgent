@@ -101,13 +101,30 @@ fi
 echo ""
 
 # 启动新容器
-echo -e "${YELLOW}[6/6] 启动新的 Java Workflow 容器...${NC}"
+echo -e "${YELLOW}[6/8] 启动新的 Java Workflow 容器...${NC}"
 cd "$DOCKER_DIR"
 docker compose -f docker-compose.workflow-dual.yml --profile java-workflow up -d core-workflow-java
 
 # 等待服务启动
 echo -e "${BLUE}等待服务启动...${NC}"
 sleep 5
+echo ""
+
+# 更新路由配置
+echo -e "${YELLOW}[7/8] 更新路由配置...${NC}"
+if [ -f .env ]; then
+    sed -i.bak 's/^CORE_WORKFLOW_PORT=7880/CORE_WORKFLOW_PORT=7881/' .env
+    echo -e "${GREEN}✓ 已更新 .env 文件: CORE_WORKFLOW_PORT=7881${NC}"
+fi
+echo ""
+
+# 重建 console-hub 以加载新的环境变量
+echo -e "${YELLOW}[8/8] 重建 console-hub (加载路由配置)...${NC}"
+docker compose stop console-hub
+docker compose rm -f console-hub
+docker compose up -d console-hub
+echo -e "${GREEN}✓ console-hub 已重建，现在所有请求将转发到 Java Workflow (7881)${NC}"
+echo ""
 
 # 健康检查
 HEALTH_URL="http://localhost:7881/actuator/health"
