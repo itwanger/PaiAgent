@@ -116,6 +116,13 @@ kafka               # Kafka 消息队列
 elasticsearch       # Elasticsearch 搜索引擎
 ```
 
+## 📚 相关文档
+
+- [本地构建部署指南](./LOCAL-BUILD-GUIDE.md) - 从源码构建完整流程
+- [项目架构说明](../../AGENTS.md) - 开发规范和命令参考
+
+---
+
 ## 📝 常见问题排查
 
 ### 问题1: 500 错误
