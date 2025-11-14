@@ -18,6 +18,9 @@ public class WorkflowEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
     
+    @TableField("flow_id")
+    private String flowId;
+    
     @TableField("name")
     private String name;
     

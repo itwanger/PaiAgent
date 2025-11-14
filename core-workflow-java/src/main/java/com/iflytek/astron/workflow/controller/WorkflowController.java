@@ -1,6 +1,7 @@
 package com.iflytek.astron.workflow.controller;
 
 import com.alibaba.fastjson2.JSON;
+import com.iflytek.astron.workflow.domain.Result;
 import com.iflytek.astron.workflow.domain.WorkflowDSL;
 import com.iflytek.astron.workflow.engine.WorkflowEngine;
 import com.iflytek.astron.workflow.engine.node.StreamCallback;
@@ -136,7 +137,7 @@ public class WorkflowController {
     }
     
     @PostMapping("/protocol/update/{flowId}")
-    public Map<String, Object> updateWorkflow(
+    public Result<Void> updateWorkflow(
             @PathVariable String flowId,
             @RequestBody WorkflowUpdateRequest request) {
         log.info("🔄 [JAVA VERSION] Workflow update request: flowId={}", flowId);
@@ -146,19 +147,13 @@ public class WorkflowController {
             
             log.info("✅ [JAVA VERSION] Workflow updated successfully: flowId={}", flowId);
             
-            return Map.of(
-                "success", true,
-                "message", "Workflow updated successfully"
-            );
+            return Result.success();
             
         } catch (Exception e) {
             log.error("❌ [JAVA VERSION] Workflow update failed: flowId={}, error={}", 
                      flowId, e.getMessage(), e);
             
-            return Map.of(
-                "success", false,
-                "error", e.getMessage()
-            );
+            return Result.failure(e.getMessage());
         }
     }
     

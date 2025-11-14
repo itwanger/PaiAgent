@@ -77,7 +77,10 @@ services:
     volumes:
       - ./config/workflow-java/logs/:/app/logs
     networks:
-      - astron-agent-network
+      astron-agent-network:
+        aliases:
+          - core-workflow-java
+          - core-workflow
     restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7881/actuator/health"]

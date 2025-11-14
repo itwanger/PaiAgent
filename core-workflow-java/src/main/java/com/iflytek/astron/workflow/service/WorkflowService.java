@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Workflow service
@@ -27,14 +28,14 @@ public class WorkflowService {
     
     /**
      * Get workflow DSL by workflow ID
-     * @param workflowId workflow ID (e.g., "184713")
+     * @param workflowId workflow flow_id (e.g., "7394988637451558914")
      * @return workflow DSL
      */
     public WorkflowDSL getWorkflowDSL(String workflowId) {
         log.info("Loading workflow: {}", workflowId);
         
         LambdaQueryWrapper<WorkflowEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(WorkflowEntity::getId, Long.parseLong(workflowId));
+        queryWrapper.eq(WorkflowEntity::getFlowId, workflowId);
         
         WorkflowEntity entity = workflowMapper.selectOne(queryWrapper);
         
@@ -49,7 +50,7 @@ public class WorkflowService {
         // No nested "data" structure
         WorkflowDSL workflowDSL = JSON.parseObject(dslData, WorkflowDSL.class);
         
-        log.info("Loaded workflow: id={}, nodes={}, edges={}", 
+        log.info("Loaded workflow: flow_id={}, nodes={}, edges={}", 
                 workflowId, workflowDSL.getNodes().size(), workflowDSL.getEdges().size());
         
         return workflowDSL;
@@ -57,14 +58,14 @@ public class WorkflowService {
     
     /**
      * Update workflow configuration
-     * @param flowId workflow ID
+     * @param flowId workflow flow_id
      * @param request update request containing name, description, data, app_id
      */
     public void updateWorkflow(String flowId, WorkflowUpdateRequest request) {
         log.info("Updating workflow: {}", flowId);
         
         LambdaQueryWrapper<WorkflowEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(WorkflowEntity::getId, Long.parseLong(flowId));
+        queryWrapper.eq(WorkflowEntity::getFlowId, flowId);
         
         WorkflowEntity entity = workflowMapper.selectOne(queryWrapper);
         
@@ -85,7 +86,22 @@ public class WorkflowService {
         }
         
         if (request.getData() != null) {
-            String dataJson = JSON.toJSONString(request.getData());
+            // Extract the inner "data" field if it exists
+            // Console-hub sends: {"data": {"nodes": [...], "edges": [...]}, "id": "xxx", "name": "xxx"}
+            // But we should save only: {"nodes": [...], "edges": [...]}
+            Map<String, Object> dataMap = request.getData();
+            Object innerData = dataMap.get("data");
+            
+            String dataJson;
+            if (innerData != null && innerData instanceof Map) {
+                // Has nested "data" field, extract it
+                dataJson = JSON.toJSONString(innerData);
+                log.debug("Extracted inner data field for storage");
+            } else {
+                // No nested structure, use as is
+                dataJson = JSON.toJSONString(dataMap);
+            }
+            
             entity.setDslData(dataJson);
             updated = true;
         }
