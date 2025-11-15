@@ -60,7 +60,7 @@ maas:
   apiSecret: NjhmY2NmM2NkZDE4MDFlNmM5ZjcyZjMy
   workflowVersion: http://127.0.0.1:8080/workflow/version
   workflowConfig: http://127.0.0.1:8080/workflow/get-flow-advanced-config
-  synchronizeWorkFlow: http://localhost:7880/api/v1/workflow
+  synchronizeWorkFlow: http://localhost:7880/workflow/v1/protocol
 
 # 日志级别
 logging:
