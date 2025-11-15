@@ -1064,7 +1064,7 @@ docker exec -it astron-agent-mysql mysql -uroot -proot123 workflow_python -e "
 
 ## 📚 相关文档
 
-- [工作流创建与执行完整流程指南](./WORKFLOW-CREATION-EXECUTION-GUIDE.md)
+- [工作流创建与执行完整流程指南](./工作流创建与执行完整流程指南)
 - [本地构建部署指南](../docker/astronAgent/LOCAL-BUILD-GUIDE.md)
 - [AGENTS.md](../AGENTS.md) - 项目整体开发指南
 - [core-workflow-java/README.md](../core-workflow-java/README.md) - Java 项目说明
