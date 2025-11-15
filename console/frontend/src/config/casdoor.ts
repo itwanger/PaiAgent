@@ -133,6 +133,24 @@ export interface ParsedUserInfo {
 export const parseCurrentUserFromToken = (): ParsedUserInfo | undefined => {
   const token = localStorage.getItem('accessToken');
   if (!token) return undefined;
+  
+  // 本地开发模式: 如果是模拟 token,返回模拟用户信息
+  if (token === 'local-dev-token') {
+    const mockUser = localStorage.getItem('mockUser');
+    if (mockUser) {
+      try {
+        return JSON.parse(mockUser) as ParsedUserInfo;
+      } catch {
+        return {
+          nickname: '本地开发用户',
+          login: 'local-dev',
+          avatar: '',
+          uid: 'local-dev-uid'
+        };
+      }
+    }
+  }
+  
   try {
     const result = casdoorSdk.parseAccessToken(token) as unknown as {
       header: Record<string, unknown>;

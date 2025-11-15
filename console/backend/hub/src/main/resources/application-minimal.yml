@@ -5,14 +5,6 @@ server:
   port: 8080
 
 spring:
-  # 禁用不需要的自动配置
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.redisson.spring.starter.RedissonAutoConfiguration
-      - org.redisson.spring.starter.RedissonAutoConfigurationV2
-  
   datasource:
     url: jdbc:mysql://localhost:3306/astron_console?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
     username: root
@@ -21,6 +13,19 @@ spring:
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
+  
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
   
   security:
     enabled: false  # 禁用 Spring Security
@@ -32,29 +37,30 @@ spring:
 
 # S3 配置 (使用 Docker 中的 MinIO)
 s3:
-  endpoint: http://localhost:18999
-  remoteEndpoint: http://localhost:18999
-  accessKey: minioadmin
-  secretKey: minioadmin
+  endpoint: http://localhost:9000        # 改为 9000 (API 端口)
+  remoteEndpoint: http://localhost:9000  # 改为 9000
+  accessKey: minioadmin                  # 改为你的 MinIO accessKey
+  secretKey: minioadmin                  # 改为你的 MinIO secretKey
   bucket: astron-agent
   presignExpirySeconds: 600
   enablePublicRead: false  # 禁用 public read 避免权限问题
 
-# Workflow 服务 URL (Java 版本)
+# Workflow 服务 URL (Python 版本)
 workflow:
-  chatUrl: http://localhost:7881/api/v1/workflow/chat/stream
-  debugUrl: http://localhost:7881/api/v1/workflow/chat/stream
-  resumeUrl: http://localhost:7881/api/v1/workflow/chat/resume
+  chatUrl: http://localhost:7880/api/v1/workflow/chat/stream
+  debugUrl: http://localhost:7880/api/v1/workflow/chat/stream
+  resumeUrl: http://localhost:7880/api/v1/workflow/chat/resume
   enabled: true
   timeout-ms: 300000
 
 # MAAS 配置 (最小配置)
 maas:
-  appId: local-test
-  apiKey: local-test
-  apiSecret: local-test
+  appId: 680ab54f
+  apiKey: 7b709739e8da44536127a333c7603a83
+  apiSecret: NjhmY2NmM2NkZDE4MDFlNmM5ZjcyZjMy
   workflowVersion: http://127.0.0.1:8080/workflow/version
   workflowConfig: http://127.0.0.1:8080/workflow/get-flow-advanced-config
+  synchronizeWorkFlow: http://localhost:7880/api/v1/workflow
 
 # 日志级别
 logging:

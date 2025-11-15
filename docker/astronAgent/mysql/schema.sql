@@ -15,7 +15,7 @@ CREATE TABLE `agent_apply_record`
     `id`             bigint NOT NULL AUTO_INCREMENT,
     `enterprise_id`  bigint       DEFAULT NULL COMMENT 'Enterprise team ID',
     `space_id`       bigint       DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `apply_uid`      varchar(128) DEFAULT NULL COMMENT 'Applicant UID',
     `apply_nickname` varchar(64)  DEFAULT NULL COMMENT 'Applicant nickname',
     `apply_time`     datetime     DEFAULT NULL COMMENT 'Application time',
@@ -209,7 +209,7 @@ CREATE TABLE `agent_invite_record`
     `id`               bigint NOT NULL AUTO_INCREMENT,
     `type`             tinyint      DEFAULT NULL COMMENT 'Invitation type: 1 space, 2 team',
     `space_id`         bigint       DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `enterprise_id`    bigint       DEFAULT NULL COMMENT 'Team ID',
     `invitee_uid`      varchar(128) DEFAULT NULL COMMENT 'Invitee UID',
     `role`             tinyint      DEFAULT NULL COMMENT 'Join role: 1 administrator, 2 member',
@@ -866,7 +866,7 @@ CREATE TABLE `agent_space_user`
 (
     `id`              bigint       NOT NULL AUTO_INCREMENT,
     `space_id`        bigint       NOT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `uid`             varchar(128) NOT NULL COMMENT 'User ID',
     `nickname`        varchar(64) DEFAULT NULL COMMENT 'User nickname',
     `role`            tinyint      NOT NULL COMMENT 'Role: 1 owner, 2 administrator, 3 member',
@@ -1126,7 +1126,7 @@ CREATE TABLE `bot_conversation_stats`
     `id`                bigint                                                        NOT NULL AUTO_INCREMENT COMMENT 'Primary key ID',
     `uid`               varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'User ID',
     `space_id`          bigint                                                                 DEFAULT NULL COMMENT 'Space ID, NULL for personal agents',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `bot_id`            int                                                           NOT NULL COMMENT 'Agent ID',
     `chat_id`           bigint                                                        NOT NULL COMMENT 'Conversation ID',
     `sid`               varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci          DEFAULT NULL COMMENT 'Session identifier',
@@ -1466,7 +1466,7 @@ CREATE TABLE `chat_bot_base`
     `prologue_en`       varchar(1024)    DEFAULT NULL COMMENT 'Opening words - English',
     `input_example_en`  varchar(1024)    DEFAULT NULL COMMENT 'Recommended questions - English',
     `space_id`          bigint           DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `model_id`          bigint           DEFAULT NULL COMMENT 'Custom model ID',
     PRIMARY KEY (`id`),
     KEY                 `idx_create_time` (`create_time`),
@@ -14176,7 +14176,7 @@ CREATE TABLE `db_info`
     `create_time`  datetime     NOT NULL,
     `update_time`  datetime              DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
     `space_id`     bigint                DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Database information table';
 
@@ -14556,7 +14556,7 @@ CREATE TABLE `mcp_data`
     `bot_id`       bigint                                                        NOT NULL COMMENT 'Agent ID',
     `uid`          bigint                                                        NOT NULL COMMENT 'User ID',
     `space_id`     bigint                                                                 DEFAULT NULL COMMENT 'Space ID, NULL for personal agents',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `server_name`  varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'MCP server name',
     `description`  text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'MCP server description',
     `content`      longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'MCP server content configuration',
@@ -14627,7 +14627,7 @@ CREATE TABLE `model`
     `update_time`       datetime              DEFAULT NULL,
     `config`            text COMMENT 'Model configuration',
     `space_id`          bigint                DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     `enable`            bit(1)                DEFAULT b'1' COMMENT 'Whether enabled',
     `status`            int                   DEFAULT NULL,
     `accelerator_count` int                   DEFAULT NULL COMMENT 'Performance configuration',
@@ -15182,7 +15182,7 @@ CREATE TABLE `tool_box`
     `version`         varchar(100)     DEFAULT NULL,
     `temporary_data`  mediumtext COMMENT 'Plugin temporary data',
     `space_id`        bigint           DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -15590,7 +15590,7 @@ CREATE TABLE `workflow`
     `ext`                  text,
     `category`             int                   DEFAULT NULL COMMENT 'Category',
     `space_id`             bigint                DEFAULT NULL COMMENT 'Space ID',
-                     int                   DEFAULT '0' COMMENT 'Workflow type',
+                     `type`                 int                   DEFAULT '0' COMMENT 'Workflow type',
     PRIMARY KEY (`id`) USING BTREE,
     KEY                    `flow_id` (`flow_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
