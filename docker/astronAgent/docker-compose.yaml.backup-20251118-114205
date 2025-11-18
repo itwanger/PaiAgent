@@ -135,6 +135,36 @@ services:
 
   # Memory Database Service
 
+  core-database:
+    image: core-database:local
+    build:
+      context: ../../
+      dockerfile: core/memory/database/Dockerfile
+    container_name: astron-agent-core-database
+    environment:
+      SERVICE_PORT: "${CORE_DATABASE_PORT:-7990}"
+      PGSQL_HOST: "${POSTGRES_HOST:-postgres}"
+      PGSQL_PORT: "${POSTGRES_PORT:-5432}"
+      PGSQL_USER: "${POSTGRES_USER:-spark}"
+      PGSQL_PASSWORD: "${POSTGRES_PASSWORD:-spark123}"
+      PGSQL_DATABASE: "${DATABASE_POSTGRES_DATABASE:-sparkdb_manager}"
+      OTLP_ENDPOINT: "${OTLP_ENDPOINT:-127.0.0.1:4317}"
+      OTLP_ENABLE: "${OTLP_ENABLE:-0}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./config/database/config.env:/opt/core/memory/database/config.env
+      - ./config/database/logs/:/opt/core/memory/database/logs
+    networks:
+      - astron-agent-network
+    restart: always
 
   # Link Plugin Service
   core-link:
@@ -255,10 +285,10 @@ services:
       RUN_LINK_URL: "${RUN_LINK_URL:-http://core-link:18888/api/v1/tools/http_run}"
       GET_WORKFLOWS_URL: "${GET_WORKFLOWS_URL:-http://core-workflow:7880/sparkflow/v1/protocol/get}"
       WORKFLOW_SSE_BASE_URL: "${WORKFLOW_SSE_BASE_URL:-http://core-workflow:7880/workflow/v1}"
-      # CHUNK_QUERY_URL: ""  # core-knowledge service removed
+      CHUNK_QUERY_URL: "${CHUNK_QUERY_URL:-http://core-knowledge:20010/knowledge/v1/chunk/query}"
       LIST_MCP_PLUGIN_URL: "${LIST_MCP_PLUGIN_URL:-http://core-link:18888/api/v1/mcp/tool_list}"
       RUN_MCP_PLUGIN_URL: "${RUN_MCP_PLUGIN_URL:-http://core-link:18888/api/v1/mcp/call_tool}"
-      # APP_AUTH_HOST: ""  # core-tenant service removed
+      APP_AUTH_HOST: "${APP_AUTH_HOST:-core-tenant}"
       APP_AUTH_PROT: "${APP_AUTH_PROT:-http}"
       APP_AUTH_API_KEY: "${APP_AUTH_API_KEY:-YOUR_APP_AUTH_API_KEY}"
       APP_AUTH_SECRET: "${APP_AUTH_SECRET:-YOUR_APP_AUTH_SECRET}"
@@ -319,14 +349,14 @@ services:
       KAFKA_SERVERS: "${KAFKA_SERVERS:-kafka:29092}"
       KAFKA_TIMEOUT: "${KAFKA_TIMEOUT:-60}"
       KAFKA_TOPIC: "${WORKFLOW_KAFKA_TOPIC:-spark-agent-builder}"
-      # KNOWLEDGE_BASE_URL: ""  # core-knowledge service removed
-      # KNOWLEDGE_PRO_BASE_URL: ""  # core-knowledge service removed
+      KNOWLEDGE_BASE_URL: "${KNOWLEDGE_BASE_URL:-http://core-knowledge:${CORE_KNOWLEDGE_PORT}}"
+      KNOWLEDGE_PRO_BASE_URL: "${KNOWLEDGE_PRO_BASE_URL:-http://core-knowledge:${CORE_KNOWLEDGE_PORT}}"
       PLUGIN_BASE_URL: "${PLUGIN_BASE_URL:-http://core-link:${CORE_LINK_PORT}}"
       WORKFLOW_BASE_URL: "${WORKFLOW_BASE_URL:-http://core-workflow:${CORE_WORKFLOW_PORT}}"
-      # APP_MANAGE_PLAT_BASE_URL: ""  # core-tenant service removed
+      APP_MANAGE_PLAT_BASE_URL: "${APP_MANAGE_PLAT_BASE_URL:-http://core-tenant:${CORE_TENANT_PORT}}"
       AGENT_BASE_URL: "${AGENT_BASE_URL:-http://core-agent:${CORE_AGENT_PORT}}"
-      # PGSQL_BASE_URL: ""  # core-database service removed
-      # RPA_BASE_URL: ""  # core-rpa service removed
+      PGSQL_BASE_URL: "${PGSQL_BASE_URL:-http://core-database:${CORE_DATABASE_PORT}}"
+      RPA_BASE_URL: "${RPA_BASE_URL:-http://core-rpa:${CORE_RPA_PORT}}"
       # Java Workflow 专用环境变量
       SERVER_PORT: "${CORE_WORKFLOW_PORT:-7880}"
       SPRING_APPLICATION_NAME: "core-workflow"
