@@ -2,6 +2,7 @@
 
 ## 目录
 - [部署与启动问题](#部署与启动问题)
+- [认证与登录问题](#认证与登录问题)
 - [数据库问题](#数据库问题)
 - [网络与连接问题](#网络与连接问题)
 - [服务异常问题](#服务异常问题)
@@ -10,7 +11,47 @@
 
 ## 部署与启动问题
 
-### Q1: 如何选择正确的重启方案？
+### Q1: 如何一键启动所有服务（包括 Casdoor OAuth 认证）？
+
+**推荐方法：使用启动脚本**
+```bash
+cd docker/astronAgent
+./start-with-auth.sh
+```
+
+**手动启动：**
+```bash
+cd docker/astronAgent
+docker compose -f docker-compose-with-auth.yaml up -d
+```
+
+**启动后访问：**
+- 🌐 前端应用: http://localhost
+- 🔐 Casdoor 控制台: http://localhost:8000
+- 👤 默认账号: admin / 123
+
+**首次启动配置：**
+1. 访问 http://localhost:8000
+2. 使用 admin / 123 登录 Casdoor
+3. 确认 astronAgent 应用已创建
+4. 验证回调地址: http://localhost/callback
+
+---
+
+### Q2: 如何启动不带 Casdoor 的简化版本（本地开发）？
+
+**适用场景：** 本地开发调试，不需要 OAuth 认证
+
+```bash
+cd docker/astronAgent
+docker compose up -d
+```
+
+此模式使用 `MockUserFilter` 自动注入 admin 用户，**无需登录**。
+
+---
+
+### Q3: 如何选择正确的重启方案？
 
 参考 `RESTART-GUIDE.md` 文档，根据不同场景选择：
 
