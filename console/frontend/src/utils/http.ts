@@ -345,6 +345,8 @@ const decodeJwtExp = (token: string): number | null => {
 
 const isAccessTokenExpired = (token: string | null): boolean => {
   if (!token) return true;
+  // 🔓 本地开发模式：mock token 永不过期
+  if (token === 'mock-local-dev-token') return false;
   const exp = decodeJwtExp(token);
   if (!exp) return true;
   const nowMs = Date.now();
@@ -409,7 +411,7 @@ axios.interceptors.response.use(
   (response: AxiosResponse) => {
     removePendingRequest(response.config); // 从pendingRequest对象中移除请求
     const result: ResponseResult<typeof response.data.data> = response.data;
-    if (response.config.responseType === 'blob') {
+    if (response.config && response.config.responseType === 'blob') {
       return response;
     }
     if (result?.code !== 0) {

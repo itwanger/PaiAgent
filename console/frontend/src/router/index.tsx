@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Layout from '@/layouts/index';
 import ConfigPage from '@/pages/config-page';
 
+const LoginPage = lazy(() => import('@/pages/login'));
 const CallbackPage = lazy(() => import('@/pages/callback'));
 const HomePage = lazy(() => import('@/pages/home-page'));
 const StorePlugin = lazy(() => import('@/pages/plugin-store'));
@@ -35,6 +36,14 @@ const SharePage = lazy(() => import('@/pages/share-page'));
 import AppListPage from '@/pages/bot-api/app-list';
 
 const routes = [
+  {
+    path: '/login',
+    element: (
+      <Suspense fallback={<Loading />}>
+        <LoginPage />
+      </Suspense>
+    ),
+  },
   {
     path: '/',
     element: (

@@ -1,18 +1,17 @@
 package com.iflytek.astron.console.hub.config;
 
-import com.iflytek.astron.console.commons.config.JwtClaimsFilter;
+import com.iflytek.astron.console.commons.config.MockUserFilter;
 import com.iflytek.astron.console.hub.config.security.RestfulAccessDeniedHandler;
 import com.iflytek.astron.console.hub.config.security.RestfulAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -24,7 +23,7 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final JwtClaimsFilter jwtClaimsFilter;
+    private final MockUserFilter mockUserFilter;
     private final RestfulAuthenticationEntryPoint restfulAuthenticationEntryPoint;
     private final RestfulAccessDeniedHandler restfulAccessDeniedHandler;
 
@@ -32,15 +31,12 @@ public class SecurityConfig {
     public SecurityFilterChain resourceServerFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                WebMvcConfig.NO_AUTH_REQUIRED_APIS)
-                        .permitAll()
                         .anyRequest()
-                        .authenticated() // Other interfaces require authentication
+                        .permitAll() // 🔓 禁用 OAuth2 认证 - 允许所有请求通过（本地开发模式）
                 )
-                // Enable OAuth2 resource server support with JWT format tokens
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(Customizer.withDefaults()))
+                // ❌ OAuth2 Resource Server 已禁用
+                // .oauth2ResourceServer(oauth2 -> oauth2
+                // .jwt(Customizer.withDefaults()))
                 // CSRF protection disabled - Safe because:
                 // 1. Using OAuth2 Bearer token authentication (via Authorization header)
                 // 2. Stateless session management (no cookies)
@@ -58,8 +54,8 @@ public class SecurityConfig {
 
         ;
 
-        // Add custom Filter to put user uid into HttpServletRequest
-        http.addFilterAfter(jwtClaimsFilter, BearerTokenAuthenticationFilter.class);
+        // ✅ 添加 MockUserFilter 自动注入 admin 用户信息
+        http.addFilterBefore(mockUserFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

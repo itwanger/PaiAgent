@@ -57,14 +57,15 @@ export default defineConfig(({ mode }) => {
           // target: 'http://10.1.196.7:8080', // 旭东
           // target: 'http://10.1.203.40:8080', // 彭颖
           // target: 'http://10.1.200.151:8080', // 超睿
-          target: 'http://172.29.202.54:8080', // 联调服务器地址
+          // target: 'http://172.29.202.54:8080', // 联调服务器地址
           //  target: 'http://172.29.201.92:8080', // 测试服务器地址
+          // 本地开发：通过 nginx 代理到 console-hub
+          target: 'http://localhost',
           changeOrigin: true,
           headers: {
             Connection: 'keep-alive',
             'Keep-Alive': 'timeout=30, max=100',
           },
-          rewrite: path => path.replace(/^\/xingchen-api/, ''),
         },
         '/chat-': {
           // target: "http://10.7.104.244:8080",

@@ -16,14 +16,20 @@ const getRuntimeCasdoorUrl = (): string => {
   }
   if (typeof window !== 'undefined' && window.__APP_CONFIG__) {
     const runtimeValue = window.__APP_CONFIG__.CASDOOR_URL;
-    if (runtimeValue !== undefined) {
+    if (runtimeValue !== undefined && runtimeValue !== '') {
       return runtimeValue;
     }
   }
   const envUrl = import.meta.env.CONSOLE_CASDOOR_URL;
   const fallbackUrl = import.meta.env.VITE_CASDOOR_SERVER_URL;
+  // 如果配置为空，返回空字符串，禁用 Casdoor
+  if (!envUrl || envUrl === '') {
+    if (!fallbackUrl || fallbackUrl === '') {
+      return '';
+    }
+  }
   return (
-    (envUrl !== undefined ? envUrl : fallbackUrl) || 'http://localhost:3000'
+    (envUrl !== undefined ? envUrl : fallbackUrl) || ''
   );
 };
 
@@ -118,6 +124,12 @@ export const performLogout = (postLogoutRedirect?: string): void => {
     sessionStorage.removeItem('postLoginRedirect');
   } catch {
     //
+  }
+  // 如果 Casdoor 未启用，直接跳转到登录页
+  const serverUrl = getRuntimeCasdoorUrl();
+  if (!serverUrl || serverUrl === '') {
+    window.location.href = '/login';
+    return;
   }
   // 返回首页
   window.location.href = '/home';
