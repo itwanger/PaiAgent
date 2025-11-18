@@ -2920,8 +2920,7 @@ public class WorkflowService extends ServiceImpl<WorkflowMapper, Workflow> {
         }
         ConfigInfo spaceSwitchNode = configInfoMapper.selectOne(new LambdaQueryWrapper<ConfigInfo>().eq(ConfigInfo::getCategory, "SPACE_SWITCH_NODE"));
         if (spaceSwitchNode != null
-                && StringUtils.isNotBlank(spaceSwitchNode.getValue())
-                && SpaceInfoUtil.getSpaceId() != null) {
+                && StringUtils.isNotBlank(spaceSwitchNode.getValue())) {
             Set<String> filter = Arrays.stream(spaceSwitchNode.getValue().split(","))
                     .map(String::trim)
                     .filter(StringUtils::isNotBlank)

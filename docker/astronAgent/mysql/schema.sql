@@ -6731,7 +6731,7 @@ main
         "licChannel": "xopgptoss120b"
     }
 ',1,'亚谋理想项目测试使用','2000-01-01 00:00:00','2025-08-07 11:41:35'),
-	 (1811,'SPACE_SWITCH_NODE','SPACE_SWITCH_NODE','空间节点开关','',1,NULL,'2025-07-10 10:50:48','2025-09-04 14:59:57'),
+	 (1811,'SPACE_SWITCH_NODE','SPACE_SWITCH_NODE','空间节点开关','ifly-code,knowledge-base,flow,decision-making,if-else,iteration,node-variable,extractor-parameter,text-joiner,message,agent,question-answer,database,rpa,knowledge-pro-base',1,NULL,'2025-07-10 10:50:48','2025-09-04 14:59:57'),
 	 (1813,'SPECIAL_MODEL','10000015','xdeepseekv31','{
     "llmSource": 1,
     "llmId": 10000015,
