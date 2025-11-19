@@ -89,7 +89,6 @@ services:
 
   # Link Plugin Service
   core-link:
-    image: core-link:local
     build:
       context: ../../
       dockerfile: core/plugin/link/Dockerfile
@@ -127,7 +126,6 @@ services:
 
   # AI Tools Plugin Service
   core-aitools:
-    image: core-aitools:local
     build:
       context: ../../
       dockerfile: core/plugin/aitools/Dockerfile
@@ -164,7 +162,6 @@ services:
 
   # Agent Service
   core-agent:
-    image: core-agent:local
     build:
       context: ../../
       dockerfile: core/agent/Dockerfile
@@ -232,7 +229,6 @@ services:
   # Workflow Service - 支持 Python/Java 双版本切换
   # 通过环境变量 WORKFLOW_VERSION 控制: python (默认) 或 java
   core-workflow:
-    image: core-workflow:local
     container_name: astron-agent-core-workflow
     build:
       context: ../../
@@ -333,7 +329,6 @@ services:
 
 #   Console Hub Service
   console-hub:
-    image: console-hub:local
     build:
       context: ../../
       dockerfile: console/backend/hub/Dockerfile
