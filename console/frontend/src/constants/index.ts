@@ -65,25 +65,6 @@ export const createMenuList = (): {
   }[];
 }[] => [
   {
-    title: '',
-    tabs: [
-      {
-        icon: agentSquare,
-        iconAct: agentSquareAct,
-        subTitle: getTranslation('sidebar.agentMarketplace'),
-        path: '/home',
-        activeTab: 'home',
-      },
-      {
-        icon: pluginSquare,
-        iconAct: pluginSquareAct,
-        subTitle: getTranslation('sidebar.pluginMarketplace'),
-        path: '/store/plugin',
-        activeTab: 'plugin',
-      },
-    ],
-  },
-  {
     title: getTranslation('sidebar.personalSpace'),
     tabs: [
       {
@@ -92,27 +73,6 @@ export const createMenuList = (): {
         subTitle: getTranslation('sidebar.myAgents'),
         path: '/space/agent',
         activeTab: 'agent',
-      },
-      // {
-      //   icon: promptTab,
-      //   iconAct: promptTabActive,
-      //   subTitle: getTranslation('sidebar.promptEngineering'),
-      //   path: '/prompt',
-      //   activeTab: 'prompt',
-      // },
-      // {
-      //   icon: effectEvaluation,
-      //   iconAct: effectEvaluationAct,
-      //   subTitle: getTranslation('sidebar.effectEvaluation'),
-      //   activeTab: 'evaluation',
-      //   path: '/management/evaluation',
-      // },
-      {
-        icon: releaseManagement,
-        iconAct: releaseManagementAct,
-        subTitle: getTranslation('sidebar.releaseManagement'),
-        activeTab: 'release',
-        path: '/management/release',
       },
       {
         icon: modelManagement,
@@ -127,13 +87,6 @@ export const createMenuList = (): {
         subTitle: getTranslation('sidebar.resourceManagement'),
         activeTab: 'resource',
         path: '/resource/plugin',
-      },
-      {
-        icon: appManagement,
-        iconAct: appManagementAct,
-        subTitle: getTranslation('sidebar.appManagement'),
-        activeTab: 'app',
-        path: '/management/app',
       },
     ],
   },

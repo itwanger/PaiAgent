@@ -28,9 +28,7 @@ const getRuntimeCasdoorUrl = (): string => {
       return '';
     }
   }
-  return (
-    (envUrl !== undefined ? envUrl : fallbackUrl) || ''
-  );
+  return (envUrl !== undefined ? envUrl : fallbackUrl) || '';
 };
 
 const getRuntimeCasdoorClientId = (): string => {
@@ -132,7 +130,7 @@ export const performLogout = (postLogoutRedirect?: string): void => {
     return;
   }
   // 返回首页
-  window.location.href = '/home';
+  window.location.href = '/';
 };
 
 export interface ParsedUserInfo {

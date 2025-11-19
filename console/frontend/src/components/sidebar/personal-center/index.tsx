@@ -16,7 +16,6 @@ import UploadAvatar from '@/components/upload-avatar';
 import { PostChatItem, FavoriteEntry } from '@/types/chat';
 import { updateUserInfo } from '@/services/spark-common';
 import { useNavigate } from 'react-router-dom';
-import { cancelFavorite } from '@/services/agent-square';
 import { deleteChatList } from '@/services/chat';
 import { useTranslation } from 'react-i18next';
 
@@ -24,10 +23,8 @@ interface PersonalCenterProps {
   open: boolean;
   onCancel: () => void;
   mixedChatList: PostChatItem[];
-  favoriteBotList: FavoriteEntry[];
   onRefreshData: () => void;
   onRefreshRecentData: () => void;
-  onRefreshFavoriteData: () => void;
 }
 
 // 类型定义
@@ -319,10 +316,8 @@ const PersonalCenter: FC<PersonalCenterProps> = ({
   open,
   onCancel,
   mixedChatList,
-  favoriteBotList,
   onRefreshData,
   onRefreshRecentData,
-  onRefreshFavoriteData,
 }) => {
   const [showInput, setShowInput] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -333,15 +328,6 @@ const PersonalCenter: FC<PersonalCenterProps> = ({
 
   const handleToChat = useCallback((item: any) => {
     navigate(`/chat/${item.botId}`);
-  }, []);
-
-  const handleDeleteFavorite = useCallback((botId: number) => {
-    cancelFavorite({
-      botId,
-    }).then(res => {
-      message.success('删除成功');
-      onRefreshFavoriteData?.();
-    });
   }, []);
 
   const handleDeleteChat = useCallback((chatListId: number) => {
@@ -378,18 +364,10 @@ const PersonalCenter: FC<PersonalCenterProps> = ({
 
     if (activeIndex === 0) {
       handleDeleteChat(itemIdToDelete);
-    } else {
-      handleDeleteFavorite(itemIdToDelete);
     }
     setDeleteOpen(false);
     setItemIdToDelete(null);
-  }, [
-    activeIndex,
-    itemIdToDelete,
-    handleDeleteChat,
-    handleDeleteFavorite,
-    onRefreshData,
-  ]);
+  }, [activeIndex, itemIdToDelete, handleDeleteChat, onRefreshData]);
 
   const handleTabChange = useCallback(
     (index: number) => {
@@ -398,12 +376,9 @@ const PersonalCenter: FC<PersonalCenterProps> = ({
       if (index === 0) {
         // Recent Used tab - refresh recent chat data
         onRefreshRecentData();
-      } else if (index === 1) {
-        // My Favorites tab - refresh favorite data
-        onRefreshFavoriteData();
       }
     },
-    [onRefreshRecentData, onRefreshFavoriteData]
+    [onRefreshRecentData]
   );
 
   return (
@@ -457,13 +432,6 @@ const PersonalCenter: FC<PersonalCenterProps> = ({
             {activeIndex === 0 && (
               <RecentUsedList
                 recentList={mixedChatList}
-                onItemClick={handleToChat}
-                onDeleteClick={handleDelete}
-              />
-            )}
-            {activeIndex === 1 && (
-              <FavoritesList
-                collectList={favoriteBotList}
                 onItemClick={handleToChat}
                 onDeleteClick={handleDelete}
               />

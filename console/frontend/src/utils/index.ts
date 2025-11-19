@@ -643,10 +643,9 @@ export const handleShare = async (
     });
 
     // 2. 复制分享链接
-    copyText({ text: shareUrl, successText: t('home.copyLinkDone') });
+    copyText({ text: shareUrl, successText: '分享链接已复制到剪贴板' });
   } catch (err) {
     message.error((err as Error)?.message || '分享失败，请稍后再试~');
-    console.warn('分享失败:', err);
   }
 };
 

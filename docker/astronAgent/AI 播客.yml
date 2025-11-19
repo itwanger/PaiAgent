@@ -1,0 +1,296 @@
+flowMeta:
+  name: AI 播客
+  description: 非常牛逼
+  avatarIcon: https://oss-beijing-m8.openstorage.cn/SparkBotProd/icon/common/emojiitem_00_10@2x.png
+  avatarColor: '#FFEAD5'
+  advancedConfig: '{"prologue":{"enabled":true,"inputExample":["","",""]}}'
+  dslVersion: v1
+flowData:
+  nodes:
+  - id: node-start::d61b0f71-87ee-475e-93ba-f1607f0ce783
+    dragging: false
+    selected: false
+    width: 362
+    height: 130
+    position:
+      x: 542.1409803921568
+      y: -102.79133333333331
+    positionAbsolute:
+      x: 542.1409803921568
+      y: -102.79133333333331
+    type: custom
+    data:
+      allowInputReference: false
+      allowOutputReference: true
+      label: 开始
+      status: success
+      nodeMeta:
+        aliasName: 开始节点
+        nodeType: 基础节点
+      inputs: [
+        ]
+      outputs:
+      - id: 0918514b-72a8-4646-8dd9-ff4a8fc26d44
+        name: AGENT_USER_INPUT
+        nameErrMsg: ''
+        schema:
+          type: string
+          default: 用户本轮对话输入内容
+        required: true
+        deleteDisabled: true
+      nodeParam: {
+        }
+      icon: https://oss-beijing-m8.openstorage.cn/pro-bucket/sparkBot/common/workflow/icon/start-node-icon.png
+      description: 工作流的开启节点，用于定义流程调用所需的业务变量信息。
+      updatable: false
+  - id: node-end::cda617af-551e-462e-b3b8-3bb9a041bf88
+    dragging: false
+    selected: true
+    width: 362
+    height: 130
+    position:
+      x: 533.5112901533353
+      y: 614.6992732902067
+    positionAbsolute:
+      x: 533.5112901533353
+      y: 614.6992732902067
+    type: custom
+    data:
+      allowInputReference: true
+      allowOutputReference: false
+      label: 结束
+      references: [
+        ]
+      status: success
+      nodeMeta:
+        aliasName: 结束节点
+        nodeType: 基础节点
+      inputs:
+      - id: bfd129e8-694c-4168-9870-17464a5f2f05
+        name: audio_url
+        nameErrMsg: ''
+        schema:
+          type: string
+          value:
+            type: ref
+            content:
+              id: 8e665ab7-5239-4856-9526-f8f07ca1d769
+              nodeId: plugin::e1df3ec1-6ed2-4ef9-8681-7764286a395b
+              name: data.voice_url
+            contentErrMsg: ''
+        fileType: ''
+      outputs: [
+        ]
+      nodeParam:
+        template: |-
+          <audio preload="none" controls>
+                      <source src="{{audio_url}}" type="audio/mpeg">
+                  </audio>
+        streamOutput: false
+        outputMode: 1
+        templateErrMsg: ''
+      icon: https://oss-beijing-m8.openstorage.cn/pro-bucket/sparkBot/common/workflow/icon/end-node-icon.png
+      description: 工作流的结束节点，用于输出工作流运行后的最终结果。
+      updatable: false
+  - id: spark-llm::0a562a15-21d6-45db-97b0-521ece84bc69
+    dragging: false
+    selected: false
+    width: 362
+    height: 148
+    position:
+      x: 544
+      y: 131
+    positionAbsolute:
+      x: 544
+      y: 131
+    type: custom
+    data:
+      allowInputReference: true
+      allowOutputReference: true
+      label: 大模型_1
+      labelEdit: false
+      references: [
+        ]
+      status: success
+      nodeMeta:
+        nodeType: 基础节点
+        aliasName: 大模型
+      inputs:
+      - id: d6bd20f4-55d7-416b-9991-c565a919fbca
+        name: input
+        nameErrMsg: ''
+        schema:
+          type: string
+          value:
+            type: ref
+            content:
+              id: 0918514b-72a8-4646-8dd9-ff4a8fc26d44
+              nodeId: node-start::d61b0f71-87ee-475e-93ba-f1607f0ce783
+              name: AGENT_USER_INPUT
+            contentErrMsg: ''
+        fileType: ''
+      outputs:
+      - id: ab640894-93f3-4395-ab9c-792c4dda60b0
+        name: output
+        nameErrMsg: ''
+        schema:
+          type: string
+          default: ''
+      nodeParam:
+        maxTokens: 2048
+        topK: 4
+        auditing: default
+        template: "# 角色\n你是沉默王二，一个嘴上贫、心里明白的技术博主。现在你主持一档叫「王二电台」的节目，这节目嘛，主打一个——有点干货、\
+          有点废话，但绝不无聊。\n# 任务\n把用户提供的原始内容改编成适合单口相声或播客节目风格的逐字稿。\n要像电台聊天那样自然，有节奏、有情绪、有\
+          点梗。\n# 注意点\n确保语言口语化，像真在跟听众唠嗑。\n专业术语要用“人话”解释，越通俗越好。\n整体节奏轻松点，有点幽默，有点温度，听着\
+          像朋友聊天，不像老师讲课。\n保持对话的自然过渡，别让听众觉得跳。\n输出时只要口播稿，不要加格式，不要写提示内容。\n# 示例 \n欢迎收听王\
+          二电台，咱这节目啊，不讲大道理，也不装深沉。\n今天这话题呢，有点意思——保证听完你会想，卧槽，原来还能这么想。\n来，别磨叽，直接开整。\n\
+          # 原始内容：{{input}}"
+        respFormat: 0
+        appId: 680ab54f
+        uid: 8fded410-c458-4c5b-b894-c6b49b01870a
+        enableChatHistoryV2:
+          isEnabled: false
+          rounds: 1
+        templateErrMsg: ''
+        llmId: 593066024
+        domain: deepseek-chat
+        serviceId: deepseek-chat
+        url: https://api.deepseek.com/v1/chat/completions
+        modelId: 1
+        isThink: false
+        multiMode: false
+        modelName: DeepSeek-中文大模型服务
+        modelEnabled: true
+        llmIdErrMsg: ''
+        source: openai
+        extraParams:
+          temperature: 1
+      icon: https://oss-beijing-m8.openstorage.cn/pro-bucket/sparkBot/common/workflow/icon/largeModelIcon.png
+      description: 根据输入的提示词，调用选定的大模型，对提示词作出回答
+      updatable: false
+  - id: plugin::e1df3ec1-6ed2-4ef9-8681-7764286a395b
+    dragging: false
+    selected: false
+    width: 362
+    height: 164
+    position:
+      x: 537.803508033759
+      y: 388.30235546588574
+    positionAbsolute:
+      x: 537.803508033759
+      y: 388.30235546588574
+    type: custom
+    data:
+      allowInputReference: true
+      allowOutputReference: true
+      label: 超拟人合成_1
+      labelEdit: false
+      references: [
+        ]
+      status: success
+      nodeMeta:
+        nodeType: 工具
+        aliasName: 工具
+      inputs:
+      - id: 58228829-b73b-4be0-b5c6-641893c0589f
+        name: vcn
+        nameErrMsg: ''
+        schema:
+          type: string
+          value:
+            type: literal
+            content: x5_lingfeiyi_flow
+            contentErrMsg: ''
+        description: 特色发音人，目前可选（x5_lingfeiyi_flow）
+        required: true
+        disabled: false
+      - id: 8fff2262-36f4-4655-b95d-f0de5da4a2cf
+        name: text
+        nameErrMsg: ''
+        schema:
+          type: string
+          value:
+            type: ref
+            content:
+              id: ab640894-93f3-4395-ab9c-792c4dda60b0
+              nodeId: spark-llm::0a562a15-21d6-45db-97b0-521ece84bc69
+              name: output
+            contentErrMsg: ''
+        fileType: ''
+        description: 需要合成的文本
+        required: true
+        disabled: false
+      - id: 5d9f763f-8c86-46a3-a08e-e5736bb1e2a4
+        name: speed
+        nameErrMsg: ''
+        schema:
+          type: integer
+          value:
+            type: literal
+            content: '50'
+            contentErrMsg: ''
+        description: 语速：0对应默认语速的1/2，100对应默认语速的2倍; 默认值50
+        required: true
+        disabled: false
+      outputs:
+      - id: 3b4e95a6-b21b-441e-883e-f68ca4af0b33
+        name: code
+        schema:
+          type: integer
+      - id: f9501bb0-0472-4182-8d91-cdd81fc4320d
+        name: message
+        schema:
+          type: string
+      - id: ee930f27-66ed-43cb-aec1-6d2277de4d9c
+        name: sid
+        schema:
+          type: string
+      - id: 7459d171-3ad8-4d53-a244-fedf6778e2e3
+        name: data
+        schema:
+          type: object
+          properties:
+          - id: 8e665ab7-5239-4856-9526-f8f07ca1d769
+            name: voice_url
+            type: string
+      nodeParam:
+        appId: 680ab54f
+        code: ''
+        pluginId: tool@8b2262bef821000
+        operationId: 超拟人合成-46EXFdLW
+        toolDescription: 用户上传一段话，选择特色发音人，生成一段更拟人的语音
+        version: V1.0
+        uid: 8fded410-c458-4c5b-b894-c6b49b01870a
+        businessInput: [
+          ]
+      icon: https://oss-beijing-m8.openstorage.cn/pro-bucket/sparkBot/common/workflow/icon/tool-icon.png
+      updatable: false
+  edges:
+  - source: node-start::d61b0f71-87ee-475e-93ba-f1607f0ce783
+    target: spark-llm::0a562a15-21d6-45db-97b0-521ece84bc69
+    type: customEdge
+    id: reactflow__edge-node-start::d61b0f71-87ee-475e-93ba-f1607f0ce783-spark-llm::0a562a15-21d6-45db-97b0-521ece84bc69
+    markerEnd:
+      type: arrow
+      color: '#275EFF'
+    data:
+      edgeType: curve
+  - source: spark-llm::0a562a15-21d6-45db-97b0-521ece84bc69
+    target: plugin::e1df3ec1-6ed2-4ef9-8681-7764286a395b
+    type: customEdge
+    id: reactflow__edge-spark-llm::0a562a15-21d6-45db-97b0-521ece84bc69-plugin::e1df3ec1-6ed2-4ef9-8681-7764286a395b
+    markerEnd:
+      type: arrow
+      color: '#275EFF'
+    data:
+      edgeType: curve
+  - source: plugin::e1df3ec1-6ed2-4ef9-8681-7764286a395b
+    target: node-end::cda617af-551e-462e-b3b8-3bb9a041bf88
+    type: customEdge
+    id: reactflow__edge-plugin::e1df3ec1-6ed2-4ef9-8681-7764286a395b-node-end::cda617af-551e-462e-b3b8-3bb9a041bf88
+    markerEnd:
+      type: arrow
+      color: '#275EFF'
+    data:
+      edgeType: curve

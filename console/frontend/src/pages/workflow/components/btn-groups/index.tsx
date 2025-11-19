@@ -181,7 +181,6 @@ const PublishHeader: React.FC<PublishHeaderProps> = ({
   const [fabuFlag, setFabuFlag]: any = useState(false);
   const [openWxmol, setOpenWxmol] = useState(false);
   const {
-    handlePublish,
     showComparativeDebugging,
     handleVersionSettings,
     handleAdvancedSettings,
@@ -273,25 +272,11 @@ const PublishHeader: React.FC<PublishHeaderProps> = ({
       <div className="flex items-center gap-[14px]">
         {!historyVersion && (
           <div
-            className="border border-[#E4EAFF] px-4 flex items-center gap-2 h-9 rounded-lg cursor-pointer"
+            className="border border-[#265dfe] bg-[#265dfe] text-[#fff] px-4 flex items-center gap-2 h-9 rounded-lg cursor-pointer"
             onClick={() => handleDebugger()}
           >
             {t('workflow.nodes.header.debug')}
           </div>
-        )}
-
-        {!historyVersion && (
-          <Button
-            type="primary"
-            className="flex items-center px-4"
-            style={{ height: '36px', lineHeight: '36px' }}
-            disabled={isLoading}
-            onClick={() => handlePublish()}
-          >
-            {currentFlow?.status === 1
-              ? t('workflow.nodes.header.updatePublish')
-              : t('workflow.nodes.header.publish')}
-          </Button>
         )}
       </div>
 

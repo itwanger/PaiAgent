@@ -1,7 +1,7 @@
 import { ReactElement, useState } from 'react';
 import addIcon from '@/assets/imgs/sidebar/btn_create_add.png';
 import { useTranslation } from 'react-i18next';
-import CreateApplicationModal from '@/components/create-application-modal';
+import MakeCreateModal from '../make-creation';
 
 interface CreateButtonProps {
   isCollapsed: boolean;
@@ -19,11 +19,10 @@ const CreateButton = ({
   onNotLogin,
 }: CreateButtonProps): ReactElement => {
   const { t, i18n } = useTranslation();
-  const [ApplicationModalVisible, setCreateModalVisible] =
-    useState<boolean>(false); //创建应用
+  const [makeModalVisible, setMakeModalVisible] = useState(false);
 
   const handleClick = (): void => {
-    setCreateModalVisible(true); // TODO: 之后看需不需要判断登录
+    setMakeModalVisible(true);
     // 统计事件
     if (onAnalytics) {
       onAnalytics();
@@ -69,12 +68,14 @@ const CreateButton = ({
           </span>
         )}
       </div>
-      <CreateApplicationModal
-        visible={ApplicationModalVisible}
-        onCancel={() => {
-          setCreateModalVisible(false);
-        }}
-      />
+      {makeModalVisible && (
+        <MakeCreateModal
+          visible={makeModalVisible}
+          onCancel={() => {
+            setMakeModalVisible(false);
+          }}
+        />
+      )}
     </div>
   );
 };

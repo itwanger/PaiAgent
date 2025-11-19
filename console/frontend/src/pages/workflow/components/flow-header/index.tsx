@@ -88,7 +88,7 @@ interface FlowTabsProps {
 
 const FlowTabs: React.FC<FlowTabsProps> = ({ currentTab, id, t, navigate }) => (
   <div className="flex items-center justify-center w-1/4 gap-4">
-    {['arrange', 'overview'].map(tab => (
+    {['arrange'].map(tab => (
       <div
         key={tab}
         className={`flex items-center justify-center py-2.5 px-8 rounded-xl font-medium cursor-pointer ${
