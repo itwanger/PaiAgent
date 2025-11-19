@@ -315,7 +315,6 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - nginx_logs:/var/log/nginx
     depends_on:
-      - console-frontend
       - console-hub
     networks:
       - astron-agent-network
@@ -326,23 +325,11 @@ services:
       timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
       retries: ${HEALTH_CHECK_RETRIES:-60}
 
-  # Console Frontend
-  console-frontend:
-    image: console-frontend:local
-    build:
-      context: ../../
-      dockerfile: console/frontend/Dockerfile
-    container_name: astron-agent-console-frontend
-    environment:
-      CONSOLE_CASDOOR_URL: "${CONSOLE_CASDOOR_URL:-}"
-      CONSOLE_CASDOOR_ID: "${CONSOLE_CASDOOR_ID:-}"
-      CONSOLE_CASDOOR_APP: "${CONSOLE_CASDOOR_APP:-}"
-      CONSOLE_CASDOOR_ORG: "${CONSOLE_CASDOOR_ORG:-}"
-    expose:
-      - "1881"
-    networks:
-      - astron-agent-network
-    restart: always
+  # Console Frontend - REMOVED (run locally with npm run dev)
+  # To start frontend locally:
+  #   cd console/frontend
+  #   npm run dev
+  # Frontend will be available at http://localhost:3000
 
 #   Console Hub Service
   console-hub:

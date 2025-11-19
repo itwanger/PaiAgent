@@ -3,7 +3,9 @@ import { performLogout, casdoorSdk } from '@/config/casdoor';
 // 检查是否启用了 Casdoor
 const isCasdoorEnabled = (): boolean => {
   const config = (casdoorSdk as any).config;
-  return !!(config?.serverUrl && config.serverUrl !== '');
+  const serverUrl = config?.serverUrl || '';
+  // 如果 serverUrl 为空或者是 localhost:3000（fallback值），则认为未启用
+  return !!(serverUrl && serverUrl !== '' && serverUrl !== 'http://localhost:3000');
 };
 
 export const handleLoginRedirect = (): void => {
