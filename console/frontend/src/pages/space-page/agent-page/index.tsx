@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Input, message, Popover, Select, Tooltip } from 'antd';
+import { message, Select, Tooltip } from 'antd';
 import { throttle } from 'lodash';
 import { enableBotFavorite } from '@/services/agent'; // NOTE: 需更换接口
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,6 @@ import {
   GetAgentListResponse,
 } from '@/services/agent';
 import DeleteBot from './components/delete-bot';
-import CreateApplicationModal from '@/components/create-application-modal';
 import { debounce } from 'lodash';
 import RetractableInput from '@/components/ui/global/retract-table-input';
 import useChat from '@/hooks/use-chat';
@@ -19,10 +18,6 @@ import useUserStore from '@/store/user-store';
 import { jumpToLogin, downloadFileWithHeaders } from '@/utils/http';
 import { getFixedUrl } from '@/components/workflow/utils';
 
-import iconNew from '@/assets/imgs/main/icon_bot_new.png';
-import search from '@/assets/imgs/knowledge/icon_zhishi_search.png';
-import favorite from '@/assets/imgs/main/favorite.png';
-import unfavorite from '@/assets/imgs/main/icon_bot_tag@2x.png';
 import formSelect from '@/assets/imgs/main/icon_nav_dropdown.svg';
 import agentOperationMore from '@/assets/imgs/main/agent-operation-more.svg';
 
@@ -30,12 +25,9 @@ import styles from './index.module.scss';
 import useSpaceStore from '@/store/space-store';
 import { getInputsType } from '@/services/flow';
 import { handleShare } from '@/utils';
+import MakeCreateModal from '@/components/make-creation';
 
 function index() {
-  const typePublished = [1, 2, 4]; // 已发布状态
-  const typeUnblished = [];
-  const typeAudit = [];
-  const typeFail = [];
   const user = useUserStore((state: any) => state.user);
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -44,7 +36,6 @@ function index() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [botDetail, setBotDetail] = useState<any>({});
   const [isHovered, setIsHovered] = useState<any>(null);
-  const [appInfoModal, setAppInfoModal] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [robots, setRobots] = useState<any>([]);
   const [pageIndex, setPageIndex] = useState(1);
@@ -52,12 +43,11 @@ function index() {
   const [status, setStatus] = useState(0);
   const [sort, setSort] = useState('createTime');
   const [version, setVersion] = useState(0);
-  const [ApplicationModalVisible, setCreateModalVisible] =
-    useState<boolean>(false); //创建应用
   const [operationId, setOperationId] = useState<string | null>(null);
   const { spaceId } = useSpaceStore();
 
   const { handleToChat } = useChat();
+  const [makeModalVisible, setMakeModalVisible] = useState(false);
 
   /* statusMap为createList接口查询时参数
   NOTE: 原本为：1 审核中，2 已发布，3 审核不通过，4修改审核中， -9 || 0 未发布 => 后来改为已发布、未发布、发布中、审核不通过；
@@ -243,12 +233,14 @@ function index() {
 
   return (
     <div className="w-full h-full overflow-hidden pb-6">
-      <CreateApplicationModal
-        visible={ApplicationModalVisible}
-        onCancel={() => {
-          setCreateModalVisible(false);
-        }}
-      />
+      {makeModalVisible && (
+        <MakeCreateModal
+          visible={makeModalVisible}
+          onCancel={() => {
+            setMakeModalVisible(false);
+          }}
+        />
+      )}
 
       {deleteModal && (
         <DeleteBot
@@ -360,7 +352,7 @@ function index() {
                   if (!user?.login && !user?.uid) {
                     return jumpToLogin();
                   }
-                  setCreateModalVisible(true);
+                  setMakeModalVisible(true);
                 }}
               >
                 <div className="color-mask"></div>
@@ -412,40 +404,12 @@ function index() {
                           {k.botDesc}
                         </div>
                       </div>
-                      <Tooltip
-                        title={
-                          k.botStatus === -9 || k.botStatus === 0
-                            ? t('agentPage.agentPage.personalUseOnly')
-                            : t('agentPage.agentPage.searchableInMarketplace')
-                        }
-                      >
-                        <div
-                          className="px-1.5 py-0.5 rounded-md font-medium text-sm absolute right-[-1px] top-[-1px]"
-                          style={{
-                            background:
-                              k.botStatus === -9 || k.botStatus === 0
-                                ? '#E6E6E8'
-                                : '#CFF4E1',
-                            color:
-                              k.botStatus === -9 || k.botStatus === 0
-                                ? '#666666'
-                                : '#477D62',
-                            borderRadius: '0px 18px 0px 8px',
-                          }}
-                        >
-                          {k.botStatus === -9 || k.botStatus === 0
-                            ? t('agentPage.agentPage.unpublished')
-                            : t('agentPage.agentPage.published')}
-                        </div>
-                      </Tooltip>
                     </div>
                   </div>
 
                   <div className="flex ml-24 gap-4">
                     <div className={styles.angentType}>
-                      {k.version === 1
-                        ? t('home.instructionType')
-                        : t('home.workflowType')}
+                      {k.version === 1 ? '智能体' : '工作流'}
                     </div>
                   </div>
 

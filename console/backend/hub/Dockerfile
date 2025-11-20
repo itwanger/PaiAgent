@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/maven:3.9.9-eclipse-temurin-21-noble AS build
 WORKDIR /backend
 
 # Configure Maven to use Aliyun mirror for faster downloads in China

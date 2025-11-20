@@ -4,183 +4,17 @@ import { Popover, Modal, message } from 'antd';
 import { menuList } from '@/constants';
 import useUserStore from '@/store/user-store';
 import eventBus from '@/utils/event-bus';
-import { jumpToLogin } from '@/utils/http';
-import { checkUserInfo } from '@/services/spark-common';
 import useChat from '@/hooks/use-chat';
 import { useEnterprise } from '@/hooks/use-enterprise';
 import useSpaceStore from '@/store/space-store';
 import { useTranslation } from 'react-i18next';
-import { getCookie } from '@/utils';
-import classNames from 'classnames';
 import { PersonSpace } from '@/components/space/person-space';
 import SpaceModal from '@/components/space/space-modal';
-import { useSpaceType } from '@/hooks/use-space-type';
-import useEnterpriseStore from '@/store/enterprise-store';
-import { MEMBER_ROLE, OWNER_ROLE } from '@/pages/space/config';
 
 // Assets
 import spaceMore from '@/assets/imgs/space/space-more.svg';
-import createSpaceImg from '@/assets/imgs/space/createSpaceImg.png';
-import enterpriseShareCreate from '@/assets/imgs/space/enterpriseShareCreate.png';
-import enterpriseSpaceJoin from '@/assets/imgs/space/enterpriseSpaceJoin.png';
-import arrowRight from '@/assets/imgs/space/arrowRight.png';
 import { deleteChatList } from '@/services/chat';
 import { PostChatItem } from '@/types/chat';
-
-// Constants
-const getAllMessage = async (params: any) => {
-  return { messages: [] };
-};
-
-const getUserAuth = async () => {
-  return {};
-};
-
-// 企业空间空菜单组件类型定义
-interface EnterpriseSpaceEmptyMenuProps {
-  isCollapsed?: boolean;
-}
-
-// EnterpriseSpaceEmptyMenu Component
-const EnterpriseSpaceEmptyMenu: FC<EnterpriseSpaceEmptyMenuProps> = ({
-  isCollapsed = false,
-}) => {
-  const navigate = useNavigate();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const { handleTeamSwitch } = useSpaceType(navigate);
-  const { joinedEnterpriseList, spaceStatistics } = useEnterpriseStore();
-  const { enterpriseId } = useSpaceStore();
-
-  const curEnterprise = useMemo(() => {
-    return joinedEnterpriseList.find(item => item.id == enterpriseId);
-  }, [enterpriseId, joinedEnterpriseList]);
-
-  const isOwner = useMemo(() => {
-    return curEnterprise && curEnterprise?.role == Number(OWNER_ROLE);
-  }, [curEnterprise]);
-
-  const isMember = useMemo(() => {
-    return curEnterprise && curEnterprise?.role == Number(MEMBER_ROLE);
-  }, [curEnterprise]);
-
-  const isShowJoinMenu = useMemo(() => {
-    return spaceStatistics.total > 0;
-  }, [spaceStatistics]);
-
-  const ownerMenu = useMemo(() => {
-    return (
-      <div
-        className={`flex-shrink-0 h-[300px] flex flex-col justify-center items-center py-1.5 px-9 gap-2 rounded-[10px] bg-[#f0f5ff] relative cursor-pointer ${
-          isCollapsed ? 'h-[100px] bg-none p-0' : ''
-        }`}
-        onClick={() => setShowCreateModal(true)}
-      >
-        <div
-          className={`${isCollapsed ? 'w-[25px] h-[25px]' : 'w-[94px] h-[94px]'} flex items-center justify-center`}
-        >
-          <img src={createSpaceImg} alt="创建空间" className="w-full h-auto" />
-        </div>
-        {!isCollapsed && (
-          <div className="w-[162px] h-[43px] flex flex-col justify-center items-center py-2.5 px-5 rounded-[10px] bg-white font-medium text-sm leading-6 text-center text-[#1f1f1f] cursor-pointer hover:text-[#275eff]">
-            创建空间
-          </div>
-        )}
-        {isCollapsed && (
-          <div className="w-auto rounded-lg bg-white shadow-[0px_0px_20px_0px_rgba(0,18,70,0.08)] text-[#333333] whitespace-nowrap py-3 px-5 absolute -top-1.5 left-[54px] z-[3] hidden group-hover:block">
-            创建空间
-          </div>
-        )}
-      </div>
-    );
-  }, [showCreateModal, setShowCreateModal, handleTeamSwitch, isCollapsed]);
-
-  const otherMenuList = useMemo(
-    () => [
-      {
-        key: 'create',
-        icon: enterpriseShareCreate,
-        desc: '创建团队共享空间',
-        btnText: '创建新空间',
-        onClick: () => {
-          setShowCreateModal(true);
-        },
-      },
-      ...(isShowJoinMenu
-        ? [
-            {
-              key: 'join',
-              icon: enterpriseSpaceJoin,
-              desc: '加入团队下的空间',
-              btnText: '进入空间管理',
-              onClick: () => {
-                navigate(`/enterprise/${enterpriseId}/space`);
-              },
-            },
-          ]
-        : []),
-    ],
-    [setShowCreateModal, navigate, enterpriseId, isShowJoinMenu]
-  );
-
-  const otherMenu = useMemo(() => {
-    return (
-      <div
-        className={`flex-shrink-0 p-3.5 flex flex-col gap-3.5 rounded-[10px] bg-[#f0f5ff] ${isCollapsed ? 'bg-none h-[100px] p-0' : ''}`}
-      >
-        {otherMenuList.map(item => {
-          return (
-            <div
-              className={`group p-2.5 flex flex-col items-center justify-center gap-1 rounded-[10px] bg-white shadow-[0px_4px_10px_0px_rgba(0,18,70,0.08)] font-medium text-sm leading-6 text-center cursor-pointer relative ${
-                isCollapsed ? 'p-0 bg-none shadow-none' : ''
-              }`}
-              key={item.key}
-              onClick={item.onClick}
-            >
-              <img
-                className={`${isCollapsed ? 'w-[25px] h-[25px]' : 'w-[72px] h-[72px]'}`}
-                src={item.icon}
-                alt=""
-              />
-              {!isCollapsed && (
-                <>
-                  <div className="text-[#7f7f7f]">{item.desc}</div>
-                  <div className="w-full flex items-center justify-center gap-1 text-[#1f1f1f] group-hover:text-[#275eff]">
-                    {item.btnText}
-                    <img
-                      className="w-[19px] h-[19px]"
-                      src={arrowRight}
-                      alt=""
-                    />
-                  </div>
-                </>
-              )}
-              {isCollapsed && (
-                <div className="w-auto rounded-lg bg-white shadow-[0px_0px_20px_0px_rgba(0,18,70,0.08)] text-[#333333] whitespace-nowrap py-3 px-5 absolute -top-1.5 left-[54px] z-[3] hidden group-hover:block">
-                  {item.btnText}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }, [otherMenuList, isCollapsed]);
-
-  return (
-    <>
-      {isOwner ? ownerMenu : otherMenu}
-      <SpaceModal
-        open={showCreateModal}
-        onClose={() => {
-          setShowCreateModal(false);
-        }}
-        onSuccess={() => {
-          handleTeamSwitch(undefined, { isJump: true });
-        }}
-      />
-    </>
-  );
-};
 
 // 最近使用列表组件Props接口
 interface RecentListProps {
@@ -338,16 +172,6 @@ const useMenuListHelpers = (
       });
   };
 
-  // Get messages/notifications
-  const getMessages = async (queryMessageType: string) => {
-    const queryParam = {
-      typeId: queryMessageType || 0,
-      page: 1,
-      pageSize: 100,
-    };
-    await getAllMessage(queryParam);
-  };
-
   // Check login
   const checkLogin = () => {
     // checkUserInfo().then((res: any) => {
@@ -356,7 +180,6 @@ const useMenuListHelpers = (
     // });
     checkNeedCreateTeamFn();
     setMobile(user?.mobile);
-    getUserAuth();
   };
 
   // Effects handlers
@@ -376,7 +199,6 @@ const useMenuListHelpers = (
 
   const initializeApp = () => {
     checkLogin();
-    getMessages('0');
   };
 
   return {
@@ -421,101 +243,6 @@ const useDynamicMenuList = (
       }),
     }));
   }, [spaceType, spaceId, spaceName, isTeamSpaceEmpty, t]);
-};
-
-// Space Button Component
-const SpaceButton: FC<{
-  isCollapsed: boolean;
-  spaceName: string;
-  spaceType: string;
-  spaceAvatar: string;
-  spaceButtonRef: React.RefObject<HTMLDivElement>;
-  isShowSpacePopover: boolean;
-  handleShowSpacePopover: () => void;
-  setIsShowSpacePopover: (show: boolean) => void;
-  t: any;
-}> = ({
-  isCollapsed,
-  spaceName,
-  spaceType,
-  spaceAvatar,
-  spaceButtonRef,
-  isShowSpacePopover,
-  handleShowSpacePopover,
-  setIsShowSpacePopover,
-  t,
-}) => {
-  const [isShowAddSpace, setIsShowAddSpace] = useState(false);
-
-  return (
-    <>
-      <Popover
-        content={<PersonSpace setIsShowAddSpace={setIsShowAddSpace} />}
-        title={null}
-        trigger="click"
-        open={isShowSpacePopover}
-        placement="rightTop"
-        overlayClassName="[&_.ant-popover-inner]:ml-0 [&_.ant-popover-inner]:p-4 [&_.ant-popover-inner]:rounded-2xl [&_.ant-popover-inner]:max-h-[calc(100vh-var(--popover-top,100px)-20px)] [&_.ant-popover-inner-content]:max-h-[calc(100vh-var(--popover-top,100px)-44px)] [&_.ant-input-affix-wrapper]:py-1.5 [&_.ant-input-affix-wrapper]:px-[7px]"
-        arrow={false}
-        getPopupContainer={triggerNode =>
-          triggerNode.parentElement || document.body
-        }
-        autoAdjustOverflow={false}
-        onOpenChange={visible => {
-          if (!visible) {
-            setIsShowSpacePopover(false);
-          }
-        }}
-      >
-        <div
-          className="text-center whitespace-nowrap text-xs py-2.5 px-3 flex cursor-pointer justify-between text-[#1f1f1f] rounded-lg relative before:content-[''] before:absolute before:-top-3.5 before:left-0 before:w-full before:h-px before:bg-[rgba(226,232,255,0.5)] hover:text-[#275eff] hover:bg-[#f5f8ff] group"
-          ref={spaceButtonRef}
-          onClick={handleShowSpacePopover}
-        >
-          <div className="w-full flex items-center justify-between gap-2 text-base font-normal leading-5">
-            <div className="flex">
-              <img
-                src={
-                  spaceAvatar ||
-                  require('@/assets/imgs/space/contacts-fill.svg')
-                }
-                alt="space"
-                className="w-[18px] h-[18px] rounded-[2px] mr-2"
-              />
-              {!isCollapsed && (
-                <div className="min-w-[110px] max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
-                  {spaceName ||
-                    (spaceType === 'personal'
-                      ? t('sidebar.personalSpace')
-                      : t('sidebar.teamSpace'))}
-                </div>
-              )}
-            </div>
-
-            {!isCollapsed && (
-              <img src={spaceMore} alt="more" className="w-[18px] h-[18px]" />
-            )}
-            {isCollapsed && (
-              <div className="w-auto rounded-lg bg-white shadow-[0px_0px_20px_0px_rgba(0,18,70,0.08)] text-[#333333] whitespace-nowrap py-3 px-5 absolute -top-1.5 left-[54px] z-[3] hidden group-hover:block">
-                {spaceName ||
-                  (spaceType === 'personal'
-                    ? t('sidebar.personalSpace')
-                    : t('sidebar.teamSpace'))}
-              </div>
-            )}
-          </div>
-        </div>
-      </Popover>
-      <SpaceModal
-        open={isShowAddSpace}
-        mode="create"
-        onClose={() => setIsShowAddSpace(false)}
-        onSuccess={() => {
-          eventBus.emit('spaceList');
-        }}
-      />
-    </>
-  );
 };
 
 // Menu Tab Component
@@ -695,19 +422,6 @@ const MenuList: FC<MenuListProps> = ({
           key={`${index}-${item?.title}`}
           className="text-gray-500 font-medium"
         >
-          {item.title && (
-            <SpaceButton
-              isCollapsed={isCollapsed}
-              spaceName={spaceName}
-              spaceType={spaceType}
-              spaceAvatar={spaceAvatar}
-              spaceButtonRef={spaceButtonRef}
-              isShowSpacePopover={isShowSpacePopover}
-              handleShowSpacePopover={handleShowSpacePopover}
-              setIsShowSpacePopover={setIsShowSpacePopover}
-              t={t}
-            />
-          )}
           {item.tabs.map((tab: any, i) => (
             <MenuTab
               key={`${i}-${tab?.subTitle}`}
@@ -722,11 +436,6 @@ const MenuList: FC<MenuListProps> = ({
           ))}
         </div>
       ))}
-
-      {/* 团队下无空间展示空菜单 */}
-      {isTeamSpaceEmpty && (
-        <EnterpriseSpaceEmptyMenu isCollapsed={isCollapsed} />
-      )}
 
       <RecentList
         isCollapsed={isCollapsed}
