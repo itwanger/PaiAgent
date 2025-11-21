@@ -6,10 +6,22 @@ It initializes the FastAPI application with all necessary middleware, routers, a
 extensions including metrics, tracing, and graceful shutdown handling.
 """
 
+# Setup Python path at module import time
+import sys
+from pathlib import Path as _Path
+
+_current_file = _Path(__file__)
+_workflow_root = _current_file.parent
+_core_dir = _workflow_root.parent
+
+for _path in [str(_core_dir), str(_workflow_root)]:
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
+# Now import standard libraries
 import json
 import multiprocessing
 import os
-import sys
 
 import uvicorn
 from fastapi import FastAPI
@@ -18,6 +30,7 @@ from fastapi.routing import APIRoute
 from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
+# Import workflow modules after path is set
 from workflow.api.v1.router import old_auth_router, sparkflow_router, workflow_router
 from workflow.cache.event_registry import EventRegistry
 from workflow.extensions.fastapi.handler.validation import validation_exception_handler
@@ -25,6 +38,36 @@ from workflow.extensions.fastapi.middleware.auth import AuthMiddleware
 from workflow.extensions.fastapi.middleware.otlp import OtlpMiddleware
 from workflow.extensions.graceful_shutdown.graceful_shutdown import GracefulShutdown
 from workflow.extensions.middleware.initialize import initialize_services
+
+
+def load_env_file(env_file: str) -> None:
+    """Load environment variables from .env file"""
+    if not os.path.exists(env_file):
+        print(f"❌ Configuration file {env_file} does not exist")
+        return
+
+    print(f"📋 Loading configuration file: {env_file}")
+
+    with open(env_file, "r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+
+            # Skip empty lines and comments
+            if not line or line.startswith("#"):
+                continue
+
+            # Parse environment variables
+            if "=" in line:
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+                if key in os.environ:
+                    print(f"  🔄 {key}={os.environ[key]} (using existing env var)")
+                else:
+                    os.environ[key] = value
+                    print(f"  ✅ {key}={value} (loaded from config)")
+            else:
+                print(f"  ⚠️  Line {line_num} format error: {line}")
 
 
 def create_app() -> FastAPI:
@@ -143,6 +186,20 @@ def _get_worker_count() -> int:
 
 
 if __name__ == "__main__":
+    print("🌟 Workflow Development Environment Launcher")
+    print("=" * 50)
+    print(f"🔧 Python path configured:")
+    print(f"   - {_core_dir}")
+    print(f"   - {_workflow_root}")
+    
+    # Load environment configuration
+    from pathlib import Path
+    config_file = Path(__file__).parent / "config.env"
+    load_env_file(str(config_file))
+    
+    print("")
+    print("🚀 Starting Workflow service...")
+
     # Main entry point for the Spark Flow application.
     # This block initializes the application environment and starts the Uvicorn
     # ASGI server with appropriate configuration for different platforms.

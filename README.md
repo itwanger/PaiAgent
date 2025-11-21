@@ -1,4 +1,4 @@
-# AI Podcast Workshop - AI 播客生成平台
+# PaiAgent - AI 播客生成平台
 
 <div align="center">
 

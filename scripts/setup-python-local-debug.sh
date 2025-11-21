@@ -23,20 +23,35 @@ echo -e "${GREEN}  Python 服务本地调试环境准备${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 
-# 检查 Docker 基础设施服务是否运行
-echo -e "${YELLOW}[1/5] 检查 Docker 基础设施服务...${NC}"
+# 检查本地基础设施服务
+echo -e "${YELLOW}[1/5] 检查本地基础设施服务...${NC}"
 
-REQUIRED_SERVICES=("astron-agent-mysql" "astron-agent-postgres" "astron-agent-redis" "astron-agent-minio")
+REQUIRED_SERVICES=("MySQL" "Redis" "MinIO")
 MISSING_SERVICES=()
 
-for service in "${REQUIRED_SERVICES[@]}"; do
-    if docker ps | grep -q "$service"; then
-        echo -e "${GREEN}✓ $service 正在运行${NC}"
-    else
-        echo -e "${RED}✗ $service 未运行${NC}"
-        MISSING_SERVICES+=("$service")
-    fi
-done
+# 检查 MySQL
+if mysql -h localhost -P 3306 -u root -p123456 -e "SELECT 1" &> /dev/null; then
+    echo -e "${GREEN}✓ MySQL 正在运行 (localhost:3306)${NC}"
+else
+    echo -e "${RED}✗ MySQL 未运行或连接失败${NC}"
+    MISSING_SERVICES+=("MySQL")
+fi
+
+# 检查 Redis
+if command -v redis-cli &> /dev/null && redis-cli -h localhost -p 6379 ping &> /dev/null; then
+    echo -e "${GREEN}✓ Redis 正在运行 (localhost:6379)${NC}"
+else
+    echo -e "${RED}✗ Redis 未运行或连接失败${NC}"
+    MISSING_SERVICES+=("Redis")
+fi
+
+# 检查 MinIO
+if curl -s http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ MinIO 正在运行 (localhost:9000)${NC}"
+else
+    echo -e "${RED}✗ MinIO 未运行或连接失败${NC}"
+    MISSING_SERVICES+=("MinIO")
+fi
 
 if [ ${#MISSING_SERVICES[@]} -ne 0 ]; then
     echo -e "${RED}错误: 以下基础设施服务未运行:${NC}"
@@ -44,67 +59,45 @@ if [ ${#MISSING_SERVICES[@]} -ne 0 ]; then
         echo -e "${RED}  - $service${NC}"
     done
     echo ""
-    echo -e "${YELLOW}请先启动基础设施服务:${NC}"
-    echo -e "${CYAN}cd $DOCKER_DIR${NC}"
-    echo -e "${CYAN}docker compose up -d mysql postgres redis minio${NC}"
+    echo -e "${YELLOW}请先启动本地服务:${NC}"
+    echo -e "${CYAN}# MySQL${NC}"
+    echo -e "  brew services start mysql"
+    echo -e "  # 或: mysql.server start"
+    echo ""
+    echo -e "${CYAN}# Redis${NC}"
+    echo -e "  brew services start redis"
+    echo -e "  # 或: redis-server"
+    echo ""
+    echo -e "${CYAN}# MinIO${NC}"
+    echo -e "  brew services start minio"
+    echo -e "  # 或: minio server /path/to/data"
     exit 1
 fi
 echo ""
 
-# 检查并暴露数据库端口
-echo -e "${YELLOW}[2/5] 确保数据库端口已暴露到 localhost...${NC}"
+# 检查数据库端口（本地服务，不需要检查端口映射）
+echo -e "${YELLOW}[2/5] 确认服务端口...${NC}"
 
-# 检查 MySQL 端口
-if docker ps | grep astron-agent-mysql | grep -q "3306->3306"; then
-    echo -e "${GREEN}✓ MySQL 端口 3306 已映射${NC}"
-else
-    echo -e "${YELLOW}⚠️  MySQL 端口 3306 未映射,需要添加端口映射${NC}"
-    echo -e "${CYAN}  在 docker-compose.yaml 的 mysql 服务中添加:${NC}"
-    echo -e "${CYAN}  ports:${NC}"
-    echo -e "${CYAN}    - \"3306:3306\"${NC}"
-fi
-
-# 检查 PostgreSQL 端口
-if docker ps | grep astron-agent-postgres | grep -q "5432->5432"; then
-    echo -e "${GREEN}✓ PostgreSQL 端口 5432 已映射${NC}"
-else
-    echo -e "${YELLOW}⚠️  PostgreSQL 端口 5432 未映射,需要添加端口映射${NC}"
-    echo -e "${CYAN}  在 docker-compose.yaml 的 postgres 服务中添加:${NC}"
-    echo -e "${CYAN}  ports:${NC}"
-    echo -e "${CYAN}    - \"5432:5432\"${NC}"
-fi
-
-# 检查 Redis 端口
-if docker ps | grep astron-agent-redis | grep -q "6379->6379"; then
-    echo -e "${GREEN}✓ Redis 端口 6379 已映射${NC}"
-else
-    echo -e "${YELLOW}⚠️  Redis 端口 6379 未映射,需要添加端口映射${NC}"
-    echo -e "${CYAN}  在 docker-compose.yaml 的 redis 服务中添加:${NC}"
-    echo -e "${CYAN}  ports:${NC}"
-    echo -e "${CYAN}    - \"6379:6379\"${NC}"
-fi
-
-# 检查 MinIO 端口
-if docker ps | grep astron-agent-minio | grep -q "9000->9000"; then
-    echo -e "${GREEN}✓ MinIO 端口 9000 已映射${NC}"
-else
-    echo -e "${YELLOW}⚠️  MinIO 端口 9000 未映射(默认应该已暴露)${NC}"
-fi
+echo -e "${GREEN}✓ MySQL 端口 3306 (本地服务)${NC}"
+echo -e "${GREEN}✓ Redis 端口 6379 (本地服务)${NC}"
+echo -e "${GREEN}✓ MinIO 端口 9000 (本地服务)${NC}"
 echo ""
 
-# 停止 Docker 中的 Python 服务
-echo -e "${YELLOW}[3/5] 停止 Docker 中的 Python 服务...${NC}"
-cd "$DOCKER_DIR"
+# 检查并停止冲突的 Python 服务
+echo -e "${YELLOW}[3/5] 检查并停止冲突的 Python 服务...${NC}"
 
-PYTHON_SERVICES=("core-agent" "core-workflow" "core-link" "core-aitools")
-for service in "${PYTHON_SERVICES[@]}"; do
-    if docker ps | grep -q "$service"; then
-        echo -e "${CYAN}停止 $service...${NC}"
-        docker compose stop "$service" 2>/dev/null || true
-        docker compose rm -f "$service" 2>/dev/null || true
+PORT_CHECK=("17870:Agent" "7880:Workflow" "18888:Link" "18668:AITools")
+for port_service in "${PORT_CHECK[@]}"; do
+    port="${port_service%%:*}"
+    service="${port_service##*:}"
+    if lsof -i ":$port" &> /dev/null; then
+        echo -e "${YELLOW}⚠ 端口 $port ($service) 已被占用${NC}"
+        echo -e "  ${CYAN}查看占用进程: lsof -i :$port${NC}"
+        echo -e "  ${CYAN}如需停止: kill -9 \$(lsof -ti :$port)${NC}"
+    else
+        echo -e "${GREEN}✓ 端口 $port ($service) 可用${NC}"
     fi
 done
-echo -e "${GREEN}✓ Python 服务已停止${NC}"
 echo ""
 
 # 生成 Python 服务的配置文件
@@ -140,7 +133,7 @@ REDIS_EXPIRE=3600
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
-MYSQL_PASSWORD=root123
+MYSQL_PASSWORD=123456
 MYSQL_DB=agent
 
 # OTLP 配置 (禁用)
@@ -195,7 +188,7 @@ SERVICE_PORT=7880
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
-MYSQL_PASSWORD=root123
+MYSQL_PASSWORD=123456
 MYSQL_DB=workflow
 
 # Redis 配置
@@ -207,7 +200,7 @@ REDIS_EXPIRE=3600
 OSS_TYPE=s3
 OSS_ENDPOINT=http://localhost:9000
 OSS_ACCESS_KEY_ID=minioadmin
-OSS_ACCESS_KEY_SECRET=minioadmin123
+OSS_ACCESS_KEY_SECRET=minioadmin
 OSS_BUCKET_NAME=workflow
 OSS_DOWNLOAD_HOST=http://localhost:9000
 OSS_TTL=157788000
@@ -238,13 +231,17 @@ SERVICE_PORT=18888
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
-MYSQL_PASSWORD=root123
+MYSQL_PASSWORD=123456
 MYSQL_DB=spark-link
 
 # Redis 配置
 REDIS_IS_CLUSTER=false
 REDIS_ADDR=localhost:6379
 REDIS_PASSWORD=
+
+# 日志配置
+LOG_LEVEL=INFO
+LOG_PATH=logs
 
 # OTLP 配置 (禁用)
 OTLP_ENDPOINT=127.0.0.1:4317
@@ -262,12 +259,13 @@ AITOOLS_CONFIG="$PROJECT_ROOT/core/plugin/aitools/config.env"
 cat > "$AITOOLS_CONFIG" << 'EOF'
 # AITools 本地调试环境配置
 SERVICE_PORT=18668
+SERVICE_APP=plugin.aitools.app.start_server:aitools_app
 
 # MinIO 配置
 OSS_TYPE=s3
 OSS_ENDPOINT=http://localhost:9000
 OSS_ACCESS_KEY_ID=minioadmin
-OSS_ACCESS_KEY_SECRET=minioadmin123
+OSS_ACCESS_KEY_SECRET=minioadmin
 OSS_BUCKET_NAME=aitools
 OSS_DOWNLOAD_HOST=http://localhost:9000
 OSS_TTL=157788000
@@ -305,6 +303,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${GREEN}========================================${NC}"
@@ -331,6 +330,9 @@ if [ -n "$TMUX" ]; then
     
     echo -e "${GREEN}✓ 所有服务已在 tmux 窗口中启动${NC}"
     echo -e "${CYAN}使用 Ctrl+B, W 查看所有窗口${NC}"
+    echo ""
+    echo -e "${CYAN}等待服务启动 (10秒)...${NC}"
+    sleep 10
 else
     echo -e "${YELLOW}建议在 tmux 中运行此脚本,以便管理多个服务${NC}"
     echo -e "${CYAN}或者手动在不同终端窗口中运行以下命令:${NC}"
@@ -346,6 +348,31 @@ else
     echo ""
     echo -e "${CYAN}# 终端 4 - Agent 服务${NC}"
     echo "cd $PROJECT_ROOT/core/agent && uv run python main.py"
+    exit 0
+fi
+
+# 检查服务状态
+echo -e "${CYAN}检查服务状态:${NC}"
+PORT_CHECK=("18888:Link" "18668:AITools" "7880:Workflow" "17870:Agent")
+ALL_RUNNING=true
+
+for port_service in "${PORT_CHECK[@]}"; do
+    port="${port_service%%:*}"
+    service="${port_service##*:}"
+    if lsof -i ":$port" &> /dev/null; then
+        echo -e "  ${GREEN}✓ $service 正在运行 (端口 $port)${NC}"
+    else
+        echo -e "  ${RED}✗ $service 未运行 (端口 $port)${NC}"
+        ALL_RUNNING=false
+    fi
+done
+
+echo ""
+if [ "$ALL_RUNNING" = true ]; then
+    echo -e "${GREEN}✓ 所有服务已成功启动！${NC}"
+else
+    echo -e "${YELLOW}⚠️  部分服务启动失败,请检查日志${NC}"
+    echo -e "${CYAN}提示: 在 tmux 中切换到对应窗口查看日志${NC}"
 fi
 
 echo ""
@@ -354,6 +381,10 @@ echo -e "  - Link:     http://localhost:18888"
 echo -e "  - AITools:  http://localhost:18668"
 echo -e "  - Workflow: http://localhost:7880"
 echo -e "  - Agent:    http://localhost:17870"
+echo ""
+echo -e "${CYAN}管理命令:${NC}"
+echo -e "  - 查看服务状态: ${YELLOW}./scripts/check-python-services.sh${NC}"
+echo -e "  - 停止所有服务: ${YELLOW}./scripts/stop-python-services.sh${NC}"
 SCRIPTEOF
 
 chmod +x "$START_ALL_SCRIPT"
@@ -379,31 +410,33 @@ echo "  4. 设置工作目录为对应的服务目录"
 echo "  5. 点击 Debug 按钮启动"
 echo ""
 echo -e "${BLUE}方案 2: 使用命令行启动所有服务${NC}"
-echo "  运行: ${CYAN}$START_ALL_SCRIPT${NC}"
+echo -e "  运行: ${CYAN}$START_ALL_SCRIPT${NC}"
 echo ""
 echo -e "${BLUE}方案 3: 手动在不同终端启动各服务${NC}"
-echo "  ${CYAN}# 终端 1 - Link 服务${NC}"
+echo -e "  ${CYAN}# 终端 1 - Link 服务${NC}"
 echo "  cd $PROJECT_ROOT/core/plugin/link"
 echo "  uv run python main.py"
 echo ""
-echo "  ${CYAN}# 终端 2 - AITools 服务${NC}"
+echo -e "  ${CYAN}# 终端 2 - AITools 服务${NC}"
 echo "  cd $PROJECT_ROOT/core/plugin/aitools"
 echo "  uv run python main.py"
 echo ""
-echo "  ${CYAN}# 终端 3 - Workflow 服务${NC}"
+echo -e "  ${CYAN}# 终端 3 - Workflow 服务${NC}"
 echo "  cd $PROJECT_ROOT/core/workflow"
 echo "  uv run python main.py"
 echo ""
-echo "  ${CYAN}# 终端 4 - Agent 服务${NC}"
+echo -e "  ${CYAN}# 终端 4 - Agent 服务${NC}"
 echo "  cd $PROJECT_ROOT/core/agent"
 echo "  uv run python main.py"
 echo ""
 echo -e "${YELLOW}⚠️  注意事项:${NC}"
-echo "1. 确保已安装 Python 3.11+ 和 uv (pip install uv)"
-echo "2. 确保 Docker 中的基础设施服务正在运行"
-echo "3. 确保数据库端口已暴露 (MySQL:3306, PostgreSQL:5432, Redis:6379)"
-echo "4. 配置文件中的数据库密码等敏感信息已自动填充"
-echo "5. AITools 服务需要配置讯飞 AI 的 AppID、APIKey 等信息"
+echo "1. 确保已安装 Python 3.11+ 和 uv (curl -LsSf https://astral.sh/uv/install.sh | sh)"
+echo "2. 确保本地基础设施服务正在运行 (MySQL, Redis, MinIO)"
+echo "3. MySQL 连接: localhost:3306, 用户: root, 密码: 123456"
+echo "4. Redis 连接: localhost:6379"
+echo "5. MinIO 连接: localhost:9000, 用户: minioadmin, 密码: minioadmin"
+echo "6. AITools 服务需要配置讯飞 AI 的 AppID、APIKey 等信息"
+echo "7. 所有 Python 服务启动后,再启动 console-hub (Java),最后启动前端"
 echo ""
 echo -e "${CYAN}🔧 配置文件位置:${NC}"
 echo "  - Agent:    $AGENT_CONFIG"

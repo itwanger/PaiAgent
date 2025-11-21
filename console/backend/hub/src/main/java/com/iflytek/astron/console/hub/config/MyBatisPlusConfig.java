@@ -9,7 +9,6 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class MyBatisPlusConfig {
         DynamicTableNameInnerInterceptor dynamicTable = new DynamicTableNameInnerInterceptor();
         dynamicTable.setTableNameHandler((sql, tableName) -> {
             // Configuration table takes effect
-            List<String> tableNames = new ArrayList<>(Arrays.asList("config_info", "prompt_template"));
+            List<String> tableNames = Arrays.asList("config_info", "prompt_template");
             if (tableNames.contains(tableName)) {
                 // Domain check if it's "en"
                 if (LanguageContext.isEn()) {

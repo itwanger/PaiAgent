@@ -28,6 +28,49 @@ echo -e "${GREEN}  本地 MySQL 数据库初始化${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 
+# 检查是否已存在数据库
+echo -e "${YELLOW}检查现有数据库...${NC}"
+EXISTING_DBS=$(mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SHOW DATABASES;" 2>/dev/null | grep -E "astron_console|spark-" || true)
+
+if [ -n "$EXISTING_DBS" ]; then
+    echo -e "${YELLOW}发现以下数据库已存在:${NC}"
+    echo "$EXISTING_DBS"
+    echo ""
+    echo -e "${YELLOW}请选择操作:${NC}"
+    echo -e "  ${CYAN}1${NC} - 删除现有数据库并重新初始化 (⚠️  会丢失所有数据)"
+    echo -e "  ${CYAN}2${NC} - 跳过已存在的数据库，只导入缺失的"
+    echo -e "  ${CYAN}3${NC} - 取消操作"
+    echo ""
+    read -p "请输入选项 [1/2/3]: " choice
+    
+    case $choice in
+        1)
+            echo -e "${RED}警告: 将删除所有现有数据！${NC}"
+            read -p "确认删除？输入 'yes' 继续: " confirm
+            if [ "$confirm" != "yes" ]; then
+                echo -e "${YELLOW}操作已取消${NC}"
+                exit 0
+            fi
+            DROP_EXISTING=true
+            ;;
+        2)
+            echo -e "${CYAN}将跳过已存在的数据库${NC}"
+            DROP_EXISTING=false
+            ;;
+        3)
+            echo -e "${YELLOW}操作已取消${NC}"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}无效选项，操作已取消${NC}"
+            exit 1
+            ;;
+    esac
+else
+    DROP_EXISTING=false
+fi
+echo ""
+
 # 检查 MySQL 客户端是否安装
 if ! command -v mysql &> /dev/null; then
     echo -e "${RED}错误: 未找到 mysql 命令${NC}"
@@ -64,6 +107,13 @@ DATABASES=(
 )
 
 for db in "${DATABASES[@]}"; do
+    if [ "$DROP_EXISTING" = true ]; then
+        echo -e "${RED}删除现有数据库: ${db}${NC}"
+        mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" <<EOF
+DROP DATABASE IF EXISTS \`${db}\`;
+EOF
+    fi
+    
     echo -e "${BLUE}创建数据库: ${db}${NC}"
     mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" <<EOF
 CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -76,8 +126,17 @@ echo ""
 echo -e "${YELLOW}[3/6] 导入 astron_console 数据库表结构...${NC}"
 if [ -f "$SQL_DIR/schema.sql" ]; then
     echo -e "${BLUE}正在导入: schema.sql (可能需要几分钟)...${NC}"
-    mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" astron_console < "$SQL_DIR/schema.sql"
-    echo -e "${GREEN}✓ schema.sql 导入成功${NC}"
+    if mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" astron_console < "$SQL_DIR/schema.sql" 2>&1 | tee /tmp/mysql_import.log | grep -v "Warning"; then
+        echo -e "${GREEN}✓ schema.sql 导入成功${NC}"
+    else
+        if grep -q "Duplicate entry" /tmp/mysql_import.log; then
+            echo -e "${YELLOW}⚠ 检测到重复数据，部分数据已存在（这是正常的）${NC}"
+        else
+            echo -e "${RED}✗ schema.sql 导入失败${NC}"
+            echo -e "${YELLOW}查看详细错误: cat /tmp/mysql_import.log${NC}"
+            exit 1
+        fi
+    fi
 else
     echo -e "${YELLOW}⚠ schema.sql 文件不存在，跳过${NC}"
 fi
@@ -156,10 +215,17 @@ done
 echo ""
 
 echo -e "${CYAN}下一步:${NC}"
-echo -e "  1. 在 IDEA 中配置环境变量:"
-echo -e "     ${YELLOW}MYSQL_URL=jdbc:mysql://localhost:3306/astron_console${NC}"
-echo -e "     ${YELLOW}MYSQL_USER=root${NC}"
-echo -e "     ${YELLOW}MYSQL_PASSWORD=123456${NC}"
+echo -e "  1. 生成 Python 服务配置:"
+echo -e "     ${YELLOW}./scripts/setup-python-local-debug.sh${NC}"
 echo ""
-echo -e "  2. 启动 console-hub 进行调试"
+echo -e "  2. 启动 Python 服务 (在 PyCharm/VSCode 中 Debug 启动):"
+echo -e "     - Link Service:    ${YELLOW}core/plugin/link/main.py${NC}"
+echo -e "     - AITools Service: ${YELLOW}core/plugin/aitools/main.py${NC}"
+echo -e "     - Workflow Service:${YELLOW}core/workflow/main.py${NC}"
+echo -e "     - Agent Service:   ${YELLOW}core/agent/main.py${NC}"
+echo ""
+echo -e "  3. 启动 Console Hub (在 IDEA 中,Active profiles: local)"
+echo ""
+echo -e "  4. 启动前端:"
+echo -e "     ${YELLOW}cd console/frontend && npm run dev${NC}"
 echo ""

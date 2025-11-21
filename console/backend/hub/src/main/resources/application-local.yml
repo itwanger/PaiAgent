@@ -1,0 +1,50 @@
+# application-local.yml - 本地开发配置
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/astron_console?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: 123456
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 1
+
+# MinIO 本地配置
+s3:
+  endpoint: http://localhost:9000
+  remoteEndpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: console
+
+# Workflow 本地服务地址
+workflow:
+  chatUrl: http://localhost:7880/api/v1/workflow/chat/stream
+  debugUrl: http://localhost:7880/api/v1/workflow/chat/stream
+  resumeUrl: http://localhost:7880/api/v1/workflow/chat/resume
+
+# Common 通用配置（租户认证，用于 WorkflowService.create）
+common:
+  appid: 680ab54f
+  apiKey: 7b709739e8da44536127a333c7603a83
+  apiSecret: NjhmY2NmM2NkZDE4MDFlNmM5ZjcyZjMy
+
+# MAAS 工作流本地配置（直连 Python workflow 服务）
+maas:
+  appId: f740451b
+  apiKey: ebaf9daded8d3b2cbe9a648247a87934
+  apiSecret: ZGE0YjQ3YjNjMmEwZGZmMDEwYzI0M2Q1
+  synchronizeWorkFlow: http://localhost:8080/workflow
+  cloneWorkFlow: http://localhost:8080/workflow/internal-clone
+  getInputs: http://localhost:8080/workflow/get-inputs-info
+  canPublishUrl: http://localhost:8080/workflow/can-publish
+  publishApi: http://localhost:7880/workflow/v1/publish
+  authApi: http://localhost:7880/workflow/v1/auth
+  mcpRegister: http://localhost:8080/workflow/release
+  workflowConfig: http://localhost:8080/workflow/get-flow-advanced-config
+  workflowVersion: http://localhost:8080/workflow/version
+  publish: http://localhost:8080/workflow/publish
+  consumerId: 680ab54f
+  consumerKey: 7b709739e8da44536127a333c7603a83
+  consumerSecret: NjhmY2NmM2NkZDE4MDFlNmM5ZjcyZjMy
