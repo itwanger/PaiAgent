@@ -81,18 +81,13 @@ if [ "$CONSOLE_HUB_READY" = false ]; then
 fi
 
 echo ""
-echo "🔄 刷新 nginx DNS 缓存..."
-docker compose restart nginx
-sleep 5
-
-echo ""
 echo "🧪 测试服务连接..."
-if curl -sf http://localhost/console-api/actuator/health > /dev/null 2>&1; then
+if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
   echo "✅ 后端服务连接成功！"
 else
   echo "⚠️  后端服务连接失败，再等待10秒重试..."
   sleep 10
-  if curl -sf http://localhost/console-api/actuator/health > /dev/null 2>&1; then
+  if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
     echo "✅ 后端服务连接成功！"
   else
     echo "❌ 后端服务仍无法连接"
@@ -113,14 +108,18 @@ echo "=================================================="
 echo "  ✅ 重启完成！"
 echo "=================================================="
 echo ""
-echo "🌐 访问地址: http://localhost"
+echo "🌐 访问地址: "
+echo "   前端开发服务器: http://localhost:3000 (需手动启动 npm run dev)"
+echo "   后端 API:       http://localhost:8080"
+echo "   工作流服务:     http://localhost:7880"
 echo "👤 默认账号: admin / 123"
 echo ""
 echo "📋 常用命令:"
 echo "   查看服务状态:      docker compose ps"
 echo "   查看后端日志:      docker logs astron-agent-console-hub --tail 50"
-echo "   查看nginx日志:     docker logs astron-agent-nginx --tail 30"
+echo "   查看工作流日志:    docker logs astron-agent-core-workflow --tail 50"
 echo "   查看所有日志:      docker compose logs -f"
+echo "   启动前端:          cd console/frontend && npm run dev"
 echo ""
 echo "❓ 如果仍有问题，请查看: FAQ.md"
 echo ""

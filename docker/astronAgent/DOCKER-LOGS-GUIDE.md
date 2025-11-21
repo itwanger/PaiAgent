@@ -5,7 +5,7 @@
 ### 1. 查看所有服务的实时日志
 ```bash
 cd docker/astronAgent
-docker compose -f docker-compose-with-auth.yaml logs -f
+docker compose -f docker-compose.yaml logs -f
 ```
 
 ### 2. 查看特定服务的日志

@@ -27,6 +27,10 @@ const routes = [
     ),
   },
   {
+    path: '/home',
+    element: <Navigate to="/space/agent" replace />,
+  },
+  {
     path: '/',
     element: (
       <Suspense fallback={<Loading />}>

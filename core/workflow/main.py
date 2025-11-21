@@ -164,4 +164,5 @@ if __name__ == "__main__":
         ).lower(),  # Set log level to error to reduce noise
         ws_ping_interval=None,  # Disable WebSocket ping interval
         ws_ping_timeout=None,  # Disable WebSocket ping timeout
+        timeout_keep_alive=1800,  # 30 minutes keep-alive for SSE connections
     )

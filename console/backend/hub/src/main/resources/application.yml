@@ -2,6 +2,10 @@ server:
   port: 8080
   servlet:
     context-path: /
+  # Tomcat connector configuration for SSE long connections
+  tomcat:
+    connection-timeout: 1800000  # 30 minutes for SSE connections
+    keep-alive-timeout: 1800000  # 30 minutes keep-alive
 
 spring:
   config:
@@ -70,7 +74,7 @@ spring:
   # MVC configuration, including async request timeout settings
   mvc:
     async:
-      request-timeout: 300000  # 5-minute async request timeout
+      request-timeout: 1800000  # 30 minutes for SSE async requests
 
   # i18n language config
   messages:

@@ -3,27 +3,6 @@ services:
   # Infrastructure Services
   # ============================================================================
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:14
-    container_name: astron-agent-postgres
-    environment:
-      POSTGRES_DB: sparkdb_manager
-      POSTGRES_USER: ${POSTGRES_USER:-spark}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spark123}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./pgsql/:/docker-entrypoint-initdb.d/
-    networks:
-      - astron-agent-network
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spark} -d sparkdb_manager"]
-      interval: ${HEALTH_CHECK_INTERVAL:-30s}
-      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
-      retries: ${HEALTH_CHECK_RETRIES:-60}
-
   # MySQL Database
   mysql:
     image: mysql:8.4
@@ -109,8 +88,6 @@ services:
       KAFKA_ENABLE: "${KAFKA_ENABLE:-0}"
       KAFKA_SERVERS: "${KAFKA_SERVERS:-kafka:29092}"
     depends_on:
-      postgres:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
@@ -145,8 +122,6 @@ services:
       AI_API_KEY: "${PLATFORM_API_KEY}"
       AI_API_SECRET: "${PLATFORM_API_SECRET}"
     depends_on:
-      postgres:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
@@ -211,8 +186,6 @@ services:
       APP_AUTH_API_KEY: "${APP_AUTH_API_KEY:-YOUR_APP_AUTH_API_KEY}"
       APP_AUTH_SECRET: "${APP_AUTH_SECRET:-YOUR_APP_AUTH_SECRET}"
     depends_on:
-      postgres:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
@@ -280,9 +253,9 @@ services:
       MODEL_SERVICE_URL: "${MODEL_SERVICE_URL:-http://console-hub:8080}"
       AITOOLS_URL: "${AITOOLS_URL:-http://core-aitools:18668}"
       JAVA_OPTS: "${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0}"
+    ports:
+      - "${CORE_WORKFLOW_PORT:-7880}:${CORE_WORKFLOW_PORT:-7880}"
     depends_on:
-      postgres:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
@@ -301,33 +274,13 @@ services:
   # astron-agent Console Services
   # ============================================================================
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: astron-agent-nginx
-    ports:
-      - "${EXPOSE_NGINX_PORT:-80}:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      - console-hub
-    networks:
-      - astron-agent-network
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/nginx-health"]
-      interval: ${HEALTH_CHECK_INTERVAL:-30s}
-      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
-      retries: ${HEALTH_CHECK_RETRIES:-60}
-
   # Console Frontend - REMOVED (run locally with npm run dev)
   # To start frontend locally:
   #   cd console/frontend
   #   npm run dev
   # Frontend will be available at http://localhost:3000
 
-#   Console Hub Service
+  # Console Hub Service
   console-hub:
     build:
       context: ../../
@@ -412,11 +365,9 @@ services:
       TENANT_CREATE_APP: "${TENANT_CREATE_APP:-}"
       TENANT_GET_APP_DETAIL: "${TENANT_GET_APP_DETAIL:-}"
       
-    expose:
-      - "8080"
+    ports:
+      - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
@@ -438,13 +389,9 @@ networks:
 # Volume Configuration
 # ============================================================================
 volumes:
-  postgres_data:
-    driver: local
   mysql_data:
     driver: local
   redis_data:
     driver: local
   minio_data:
-    driver: local
-  nginx_logs:
     driver: local
