@@ -59,8 +59,8 @@ def smarttts_main(
             node_trace.start_time = int(round(time.time() * 1000))
 
             if not text:
-                response = ErrorResponse(
-                    CodeEnum.TEXT_RESULT_NULL_ERROR, sid=uuid.uuid4()
+                response = ErrorResponse.from_enum(
+                    CodeEnum.TEXT_RESULT_NULL_ERROR, sid=str(uuid.uuid4())
                 )
                 m.in_error_count(response.code)
                 node_trace.answer = response.message
@@ -116,7 +116,7 @@ def smarttts_main(
             return response
     except Exception as e:
         logging.error("smarttts请求error: %s", str(e))
-        response = ErrorResponse(CodeEnum.VOICE_GENERATE_ERROR)
+        response = ErrorResponse.from_enum(CodeEnum.VOICE_GENERATE_ERROR)
         m.in_error_count(response.code)
         node_trace.answer = response.message
         node_trace.status = Status(code=response.code, message=response.message)

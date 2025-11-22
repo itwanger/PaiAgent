@@ -185,6 +185,43 @@ for entry in "${SQL_FILES[@]}"; do
 done
 echo ""
 
+# 调整 spark-link 数据库配置以适配本地环境
+echo -e "${YELLOW}[7/7] 调整本地开发环境配置...${NC}"
+echo -e "${BLUE}更新 spark-link.tools_schema 中的 AITools 服务地址...${NC}"
+mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" spark-link <<EOF
+UPDATE tools_schema
+SET open_api_schema = REPLACE(
+  open_api_schema,
+  'http://core-aitools:18668',
+  'http://localhost:18668'
+)
+WHERE tool_id='tool@8b2262bef821000';
+EOF
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ AITools 服务地址已更新为本地地址${NC}"
+else
+    echo -e "${YELLOW}⚠ AITools 服务地址更新失败（可能是数据不存在）${NC}"
+fi
+
+echo -e "${BLUE}更新 spark-workflow.workflow 中的 AI_APP_ID...${NC}"
+mysql -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" spark-workflow <<EOF
+UPDATE workflow
+SET workflow = REPLACE(
+  workflow,
+  '680ab54f',
+  'f740451b'
+)
+WHERE workflow LIKE '%680ab54f%';
+EOF
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Workflow AI_APP_ID 已更新为 f740451b${NC}"
+else
+    echo -e "${YELLOW}⚠ Workflow AI_APP_ID 更新失败（可能是数据不存在）${NC}"
+fi
+echo ""
+
 # 验证数据库
 echo -e "${YELLOW}验证数据库创建...${NC}"
 echo -e "${CYAN}已创建的数据库:${NC}"

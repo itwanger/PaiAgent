@@ -175,6 +175,7 @@ EOF
 echo -e "${GREEN}✓ Agent 配置已生成: ${CYAN}$AGENT_CONFIG${NC}"
 
 # Workflow 配置
+echo -e "${YELLOW}[4/5] 生成 Workflow 服务配置...${NC}"
 WORKFLOW_CONFIG="$PROJECT_ROOT/core/workflow/config.env"
 cat > "$WORKFLOW_CONFIG" << 'EOF'
 # Workflow 本地调试环境配置
@@ -220,6 +221,54 @@ AGENT_BASE_URL=http://localhost:17870
 EOF
 
 echo -e "${GREEN}✓ Workflow 配置已生成: ${CYAN}$WORKFLOW_CONFIG${NC}"
+
+# Workflow config.local.env (本地环境会加载此文件)
+WORKFLOW_LOCAL_CONFIG="$PROJECT_ROOT/core/workflow/config.local.env"
+cat > "$WORKFLOW_LOCAL_CONFIG" << 'EOF'
+# Workflow 本地调试环境配置
+PYTHONUNBUFFERED=1
+
+# 运行环境
+RUNTIME_ENV=local
+SERVICE_PORT=7880
+LOG_LEVEL=INFO
+
+# MySQL 配置
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=123456
+MYSQL_DB=spark-workflow
+
+# Redis 配置
+REDIS_ADDR=localhost:6379
+REDIS_PASSWORD=
+REDIS_EXPIRE=3600
+
+# MinIO 配置
+OSS_TYPE=s3
+OSS_ENDPOINT=http://localhost:9000
+OSS_ACCESS_KEY_ID=minioadmin
+OSS_ACCESS_KEY_SECRET=minioadmin
+OSS_BUCKET_NAME=workflow
+OSS_DOWNLOAD_HOST=http://localhost:9000
+OSS_TTL=157788000
+
+# OTLP 配置 (禁用)
+OTLP_ENDPOINT=127.0.0.1:4317
+OTLP_ENABLE=0
+
+# Kafka 配置 (禁用)
+KAFKA_ENABLE=0
+KAFKA_SERVERS=localhost:9092
+
+# 服务地址
+PLUGIN_BASE_URL=http://localhost:18888
+WORKFLOW_BASE_URL=http://localhost:7880
+AGENT_BASE_URL=http://localhost:17870
+EOF
+
+echo -e "${GREEN}✓ Workflow 本地配置已生成: ${CYAN}$WORKFLOW_LOCAL_CONFIG${NC}"
 
 # Link 配置
 LINK_CONFIG="$PROJECT_ROOT/core/plugin/link/config.env"
@@ -270,10 +319,12 @@ OSS_BUCKET_NAME=aitools
 OSS_DOWNLOAD_HOST=http://localhost:9000
 OSS_TTL=157788000
 
-# 讯飞 AI 配置 (需要替换为实际值)
-AI_APP_ID=your-app-id
-AI_API_KEY=your-api-key
-AI_API_SECRET=your-api-secret
+# 讯飞 AI 配置
+AI_APP_ID=f740451b
+AI_API_KEY=ebaf9daded8d3b2cbe9a648247a87934
+AI_API_SECRET=ZGE0YjQ3YjNjMmEwZGZmMDEwYzI0M2Q1
+AI_API_PASSWORD=neVbEUFHutkxSAbmFwer:DtHAeYaSHonPvwYWLlkD
+TTS_URL=wss://cbm01.cn-huabei-1.xf-yun.com/v1/private/mcd9m97e6
 
 # Kafka 配置 (禁用)
 KAFKA_ENABLE=0
@@ -441,6 +492,7 @@ echo ""
 echo -e "${CYAN}🔧 配置文件位置:${NC}"
 echo "  - Agent:    $AGENT_CONFIG"
 echo "  - Workflow: $WORKFLOW_CONFIG"
+echo "  - Workflow (local): $WORKFLOW_LOCAL_CONFIG"
 echo "  - Link:     $LINK_CONFIG"
 echo "  - AITools:  $AITOOLS_CONFIG"
 echo ""

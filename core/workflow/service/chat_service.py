@@ -507,7 +507,7 @@ async def _run(
         code = 0
         error_message = ""
         try:
-
+            logger.info(f"[DEBUG] Step 1: Getting or building workflow engine for flow_id={chat_vo.flow_id}")
             # Get or build workflow engine
             src_sparkflow_engine = await _get_or_build_workflow_engine(
                 is_release,
@@ -517,22 +517,27 @@ async def _run(
                 workflow_dsl_update_time,
                 span_context,
             )
+            logger.info(f"[DEBUG] Step 2: Engine created, making deepcopy")
             sparkflow_engine = copy.deepcopy(src_sparkflow_engine)
 
+            logger.info(f"[DEBUG] Step 3: Initializing streaming components")
             # Initialize streaming processing components
             need_order_stream_result_q: asyncio.Queue[Any] = asyncio.Queue()
             structured_data: dict[Any, Any] = {}
             support_stream_node_id_queue: asyncio.Queue[Any] = asyncio.Queue()
 
+            logger.info(f"[DEBUG] Step 4: Setting flow_id in system params")
             sparkflow_engine.engine_ctx.variable_pool.system_params.set(
                 ParamKey.FlowId, chat_vo.flow_id
             )
+            logger.info(f"[DEBUG] Step 5: Initializing stream queues")
             # Initialize model content output queues
             await _init_stream_q(
                 sparkflow_engine.engine_ctx.msg_or_end_node_deps,
                 sparkflow_engine.engine_ctx.variable_pool,
             )
 
+            logger.info(f"[DEBUG] Step 6: Initializing callbacks and consumers")
             callbacks, consumer_tasks = await _init_callbacks_and_consumers(
                 sparkflow_engine,
                 response_queue,
@@ -544,19 +549,24 @@ async def _run(
                 chat_vo.flow_id,
             )
 
+            logger.info(f"[DEBUG] Step 7: Validating file inputs")
             # Validate file inputs (if any)
             await _validate_file_inputs(workflow_dsl, chat_vo, span_context)
 
+            logger.info(f"[DEBUG] Step 8: Getting chat history")
             # Get chat history records
             history = await _get_chat_history(sparkflow_engine, chat_vo, span_context)
 
+            logger.info(f"[DEBUG] Step 9: Checking audit policy")
             # Perform input content audit
             if app_audit_policy == AppAuditPolicy.AGENT_PLATFORM:
                 await _perform_input_audit(chat_vo, span)
 
+            logger.info(f"[DEBUG] Step 10: Starting workflow execution")
             # Execute workflow
             await callbacks.on_sparkflow_start()
 
+            logger.info(f"[DEBUG] Step 11: Running workflow engine with inputs={chat_vo.parameters}")
             result = await sparkflow_engine.async_run(
                 inputs=chat_vo.parameters,
                 callback=callbacks,
@@ -565,15 +575,22 @@ async def _run(
                 history_v2=chat_vo.history,
                 event_log_trace=workflow_trace,
             )
+            logger.info(f"[DEBUG] Step 12: Workflow execution completed, result={result}")
 
+            logger.info(f"[DEBUG] Step 13: Processing and reporting result")
             # Process results and upload trace information
             await _process_and_report_result(
                 result, workflow_trace, span_context, consumer_tasks
             )
 
+            logger.info(f"[DEBUG] Step 14: Workflow end callback")
             await callbacks.on_sparkflow_end(message=result)
             m.in_success_count()
+            logger.info(f"[DEBUG] Step 15: Workflow execution completed successfully")
         except CustomException as err:
+            logger.error(f"[DEBUG] CustomException at step: {err.code} - {err.message}")
+            import traceback
+            logger.error(f"[DEBUG] Traceback:\n{traceback.format_exc()}")
             llm_resp = LLMGenerate.workflow_end_error(
                 sid=span.sid, code=err.code, message=err.message
             )
@@ -583,6 +600,9 @@ async def _run(
             code = err.code
             error_message = err.message
         except Exception as err:
+            import traceback
+            logger.error(f"[DEBUG] Exception at unknown step: {type(err).__name__}: {str(err)}")
+            logger.error(f"[DEBUG] Full traceback:\n{traceback.format_exc()}")
             llm_resp = LLMGenerate.workflow_end_error(
                 sid=span.sid,
                 code=CodeEnum.PROTOCOL_VALIDATION_ERROR.code,

@@ -161,7 +161,7 @@ public class WorkflowService extends ServiceImpl<WorkflowMapper, Workflow> {
     public static final String PROTOCOL_ADD_PATH = "/workflow/v1/protocol/add";
     public static final String PROTOCOL_UPDATE_PATH = "/workflow/v1/protocol/update/";
     public static final String PROTOCOL_DELETE_PATH = "/workflow/v1/protocol/delete";
-    public static final String NODE_DEBUG_PATH = "/workflow/v1/node/debug/";
+    public static final String NODE_DEBUG_PATH = "/workflow/v1/node/debug";
     public static final String PROTOCOL_BUILD_PATH = "/workflow/v1/protocol/build/";
     public static final String CODE_RUN_PATH = "/workflow/v1/run";
     public static final String CLONED_SUFFIX_PATTERN = "[(]\\d+[)]$";
@@ -1384,6 +1384,12 @@ public class WorkflowService extends ServiceImpl<WorkflowMapper, Workflow> {
         BizNodeData bizNodeData = node.getData();
 
         // Fill app/ak/sk
+        // In FIXED_APPID_ENV (dev/test/custom/local), use commonConfig for all non-flow nodes
+        if (!node.getId().startsWith(WorkflowConst.NodeType.FLOW)
+                && CommonConst.FIXED_APPID_ENV.contains(env)) {
+            buidKeyInfo(bizNodeData);
+        }
+        
         String appId = bizNodeData.getNodeParam().getString("appId");
         AkSk aksk = appService.remoteCallAkSk(appId);
         ConfigInfo configInfo = configInfoMapper.getByCategoryAndCode("NODE_API_K_S", "NODE");
@@ -1395,11 +1401,6 @@ public class WorkflowService extends ServiceImpl<WorkflowMapper, Workflow> {
             if (!configs.contains(prefix)) {
                 bizNodeData.getNodeParam().put("apiKey", aksk.getApiKey());
                 bizNodeData.getNodeParam().put("apiSecret", aksk.getApiSecret());
-
-                if (!node.getId().startsWith(WorkflowConst.NodeType.FLOW)
-                        && CommonConst.FIXED_APPID_ENV.contains(env)) {
-                    buidKeyInfo(bizNodeData);
-                }
                 String source = bizNodeData.getNodeParam().getString("source");
                 if ("openai".equals(source)) {
                     Long modelId = bizNodeData.getNodeParam().getLong("modelId");

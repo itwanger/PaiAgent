@@ -4,7 +4,7 @@ import java.util.*;
 
 public class CommonConst {
     public static final List<String> FIXED_APPID_ENV =
-            Collections.unmodifiableList(Arrays.asList("dev", "test", "custom"));
+            Collections.unmodifiableList(Arrays.asList("dev", "test", "custom", "local"));
 
     public static final List<String> FIXED_APPID_ENV_PRO =
             Collections.unmodifiableList(Arrays.asList("dev", "test", "custom", "pre", "prod"));

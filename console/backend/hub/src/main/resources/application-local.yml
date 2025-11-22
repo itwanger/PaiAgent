@@ -18,17 +18,30 @@ s3:
   secretKey: minioadmin
   bucket: console
 
+# Spark LLM 配置（讯飞开放平台）
+spark:
+  app-id: f740451b
+  api-key: ebaf9daded8d3b2cbe9a648247a87934
+  api-secret: ZGE0YjQ3YjNjMmEwZGZmMDEwYzI0M2Q1
+  api:
+    password: neVbEUFHutkxSAbmFwer:DtHAeYaSHonPvwYWLlkD
+  rtasr-appId: f740451b
+  rtasr-key: your-rtasr-key
+  image-appId: f740451b
+  image-apiKey: ebaf9daded8d3b2cbe9a648247a87934
+  image-apiSecret: ZGE0YjQ3YjNjMmEwZGZmMDEwYzI0M2Q1
+
 # Workflow 本地服务地址
 workflow:
   chatUrl: http://localhost:7880/api/v1/workflow/chat/stream
   debugUrl: http://localhost:7880/api/v1/workflow/chat/stream
   resumeUrl: http://localhost:7880/api/v1/workflow/chat/resume
 
-# Common 通用配置（租户认证，用于 WorkflowService.create）
+# Common 通用配置（用于 Workflow 节点的默认 AK/SK）
 common:
-  appid: 680ab54f
-  apiKey: 7b709739e8da44536127a333c7603a83
-  apiSecret: NjhmY2NmM2NkZDE4MDFlNmM5ZjcyZjMy
+  appid: f740451b
+  apiKey: ebaf9daded8d3b2cbe9a648247a87934
+  apiSecret: ZGE0YjQ3YjNjMmEwZGZmMDEwYzI0M2Q1
 
 # MAAS 工作流本地配置（直连 Python workflow 服务）
 maas:
