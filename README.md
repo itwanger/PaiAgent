@@ -15,7 +15,7 @@
 [![React](https://img.shields.io/badge/React-18.x-61dafb.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 
-[快速开始](#-快速开始) • [功能特性](#-核心特性) • [技术架构](#-技术架构) • [使用文档](./USER_GUIDE.md) • [开发进度](./PROGRESS.md)
+[快速开始](#-快速开始) • [功能特性](#-核心特性) • [技术架构](#-技术架构) • [使用文档](./USER_GUIDE.md) • [开发进度](./PROGRESS.md)• [国内AtomGit托管](https://atomgit.com/javabetter/PaiAgent)
 
 </div>
 
