@@ -1,84 +1,49 @@
 package com.paiagent.service;
 
+import com.paiagent.config.RagProperties;
 import com.paiagent.entity.KnowledgeBase;
-import com.paiagent.entity.KnowledgeChunk;
-import com.paiagent.mapper.KnowledgeBaseMapper;
-import com.paiagent.mapper.KnowledgeChunkMapper;
-import com.paiagent.mapper.KnowledgeDocumentMapper;
-import com.paiagent.mapper.KnowledgeIndexTaskMapper;
+import com.paiagent.service.rag.DocumentParseService;
+import com.paiagent.service.rag.KnowledgeBaseVectorService;
+import com.paiagent.service.rag.PgVectorStore;
+import com.paiagent.service.rag.RagRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class KnowledgeBaseServiceTest {
-
     @Test
-    void shouldScoreChineseTextMatchesWhenEmbeddingIsUnavailable() {
-        KnowledgeChunkMapper chunkMapper = mock(KnowledgeChunkMapper.class);
-        KnowledgeBaseService service = createService(chunkMapper);
-        when(chunkMapper.selectList(any())).thenReturn(List.of(
-                chunk(1L, "联网搜索能力", "Agent Plan 支持联网搜索、网页读取和知识库检索，可以获取实时权威信息。"),
-                chunk(2L, "语音能力", "TTS 节点负责把文本转换成语音，适合播报和配音。")
-        ));
+    void retrieveUsesPostgresVectorStoreAndKeepsCompatibleResult() {
+        RagRepository repository=mock(RagRepository.class); PgVectorStore store=mock(PgVectorStore.class);
+        KnowledgeBase base=new KnowledgeBase();base.setId(1L);when(repository.findBase(1L)).thenReturn(base);
+        Document hit=Document.builder().id("12").text("RAG 使用 pgvector 检索")
+                .metadata(Map.of("knowledgeBaseId","1","documentId","8","title","RAG")).score(0.91).build();
+        when(store.similaritySearch(eq(1L),any(SearchRequest.class))).thenReturn(List.of(hit));
 
-        Map<String, Object> result = service.retrieve("1", "联网搜索应该怎么做?", List.of(), 5, 0);
+        Map<String,Object> result=create(repository,store).retrieve("1","RAG 怎么检索",List.of(),5,0.2);
 
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> chunks = (List<Map<String, Object>>) result.get("chunks");
-        assertEquals(1, chunks.size());
-        assertEquals(1L, chunks.getFirst().get("chunkId"));
-        assertTrue((double) chunks.getFirst().get("score") > 0);
+        @SuppressWarnings("unchecked") List<Map<String,Object>> chunks=(List<Map<String,Object>>)result.get("chunks");
+        assertEquals(12L,chunks.getFirst().get("chunkId"));
+        assertTrue(String.valueOf(result.get("context")).contains("不可信参考资料 #12"));
     }
 
     @Test
-    void shouldNotReturnZeroScoreChunksWhenThresholdAllowsFallbackSearch() {
-        KnowledgeChunkMapper chunkMapper = mock(KnowledgeChunkMapper.class);
-        KnowledgeBaseService service = createService(chunkMapper);
-        when(chunkMapper.selectList(any())).thenReturn(List.of(
-                chunk(1L, "语音能力", "TTS 节点负责把文本转换成语音，适合播报和配音。")
-        ));
-
-        Map<String, Object> result = service.retrieve("1", "联网搜索应该怎么做?", List.of(), 5, 0);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> chunks = (List<Map<String, Object>>) result.get("chunks");
-        assertTrue(chunks.isEmpty());
-        assertFalse(String.valueOf(result.get("context")).contains("TTS"));
+    void retrieveReturnsEmptyContextWhenNoVectorMatches() {
+        RagRepository repository=mock(RagRepository.class);PgVectorStore store=mock(PgVectorStore.class);
+        KnowledgeBase base=new KnowledgeBase();base.setId(1L);when(repository.findBase(1L)).thenReturn(base);
+        when(store.similaritySearch(eq(1L),any(SearchRequest.class))).thenReturn(List.of());
+        assertEquals("",create(repository,store).retrieve("1","无结果",List.of(),5,0.2).get("context"));
     }
 
-    private KnowledgeBaseService createService(KnowledgeChunkMapper chunkMapper) {
-        KnowledgeBaseMapper baseMapper = mock(KnowledgeBaseMapper.class);
-        KnowledgeBase base = new KnowledgeBase();
-        base.setId(1L);
-        base.setName("测试知识库");
-        when(baseMapper.selectById(1L)).thenReturn(base);
-        return new KnowledgeBaseService(
-                baseMapper,
-                mock(KnowledgeDocumentMapper.class),
-                chunkMapper,
-                mock(KnowledgeIndexTaskMapper.class),
-                mock(AgentPlanConfigResolver.class),
-                mock(VolcengineAgentPlanClient.class)
-        );
-    }
-
-    private KnowledgeChunk chunk(Long id, String title, String content) {
-        KnowledgeChunk chunk = new KnowledgeChunk();
-        chunk.setId(id);
-        chunk.setKnowledgeBaseId(1L);
-        chunk.setDocumentId(10L + id);
-        chunk.setTitle(title);
-        chunk.setContent(content);
-        chunk.setEmbedding("[]");
-        chunk.setStatus("READY");
-        return chunk;
+    private KnowledgeBaseService create(RagRepository repository,PgVectorStore store){
+        return new KnowledgeBaseService(repository,mock(DocumentParseService.class),mock(KnowledgeBaseVectorService.class),
+                store,new RagProperties(),mock(MinioService.class),mock(PlatformTransactionManager.class));
     }
 }

@@ -25,28 +25,40 @@ import java.util.Map;
 public class VolcengineAgentPlanClient {
 
     public List<Double> createEmbedding(ResolvedAgentPlanConfig config, String input) throws IOException {
+        List<List<Double>> embeddings = createEmbeddings(config, List.of(input));
+        return embeddings.isEmpty() ? List.of() : embeddings.getFirst();
+    }
+
+    /** OpenAI-compatible batch Embedding call; output is restored to request order by response index. */
+    public List<List<Double>> createEmbeddings(ResolvedAgentPlanConfig config, List<String> inputs) throws IOException {
+        if (inputs == null || inputs.isEmpty()) {
+            return List.of();
+        }
         JSONObject request = new JSONObject();
         request.put("model", config.model());
-        request.put("input", input);
+        request.put("input", inputs);
 
         JSONObject response = postJson(config, "/embeddings", request);
         JSONArray data = response.getJSONArray("data");
-        if (data == null || data.isEmpty()) {
-            return List.of();
+        if (data == null || data.size() != inputs.size()) {
+            throw new IOException("Embedding 返回数量与输入数量不一致");
         }
-
-        JSONArray embedding = data.getJSONObject(0).getJSONArray("embedding");
-        if (embedding == null) {
-            return List.of();
-        }
-
-        List<Double> vector = new ArrayList<>(embedding.size());
-        for (Object value : embedding) {
-            if (value instanceof Number number) {
-                vector.add(number.doubleValue());
+        List<List<Double>> result = new ArrayList<>(java.util.Collections.nCopies(inputs.size(), null));
+        for (int position = 0; position < data.size(); position++) {
+            JSONObject item = data.getJSONObject(position);
+            Integer index = item.getInteger("index");
+            int target = index == null ? position : index;
+            if (target < 0 || target >= inputs.size()) throw new IOException("Embedding 返回非法 index: " + target);
+            JSONArray embedding = item.getJSONArray("embedding");
+            if (embedding == null || embedding.isEmpty()) throw new IOException("Embedding 返回空向量");
+            List<Double> vector = new ArrayList<>(embedding.size());
+            for (Object value : embedding) {
+                if (value instanceof Number number) vector.add(number.doubleValue());
             }
+            result.set(target, vector);
         }
-        return vector;
+        if (result.stream().anyMatch(java.util.Objects::isNull)) throw new IOException("Embedding 返回缺少部分结果");
+        return result;
     }
 
     public Map<String, Object> generateImage(ResolvedAgentPlanConfig config, String prompt,
@@ -139,7 +151,9 @@ public class VolcengineAgentPlanClient {
         HttpURLConnection conn = openConnection(config, path, "POST", apiKey);
         byte[] bytes = body.toJSONString().getBytes(StandardCharsets.UTF_8);
         conn.setDoOutput(true);
-        conn.getOutputStream().write(bytes);
+        try (var output = conn.getOutputStream()) {
+            output.write(bytes);
+        }
         return readResponse(conn);
     }
 
@@ -165,10 +179,12 @@ public class VolcengineAgentPlanClient {
 
     private JSONObject readResponse(HttpURLConnection conn) throws IOException {
         int status = conn.getResponseCode();
-        byte[] bytes = (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes();
+        var stream = status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream();
+        byte[] bytes = stream == null ? new byte[0] : stream.readAllBytes();
         String text = new String(bytes, StandardCharsets.UTF_8);
         if (status < 200 || status >= 300) {
-            throw new IOException("Agent Plan 调用失败, HTTP " + status + ": " + text);
+            String safe = text.length() > 1000 ? text.substring(0, 1000) : text;
+            throw new IOException("Agent Plan 调用失败, HTTP " + status + ": " + safe);
         }
         return JSON.parseObject(text);
     }
@@ -177,9 +193,6 @@ public class VolcengineAgentPlanClient {
         String base = apiUrl == null ? "" : apiUrl.trim();
         while (base.endsWith("/")) {
             base = base.substring(0, base.length() - 1);
-        }
-        if (base.endsWith("/v1")) {
-            base = base.substring(0, base.length() - 3);
         }
         return base;
     }

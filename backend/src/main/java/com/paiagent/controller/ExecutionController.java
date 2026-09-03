@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -70,7 +71,7 @@ public class ExecutionController {
         
         try {
             // 使用引擎选择器选择合适的执行引擎
-            WorkflowExecutor executor = engineSelector.selectEngine(workflow);
+            WorkflowExecutor executor = engineSelector.selectEngine(workflow); // 指向子类
             ExecutionResponse response = executor.execute(workflow, request.getInputData());
             return Result.success(response);
         } catch (Exception e) {

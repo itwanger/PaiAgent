@@ -1,10 +1,7 @@
 package com.paiagent.engine.executor.impl;
 
 import com.paiagent.engine.model.WorkflowNode;
-import com.paiagent.service.AgentPlanConfigResolver;
 import com.paiagent.service.KnowledgeBaseService;
-import com.paiagent.service.ResolvedAgentPlanConfig;
-import com.paiagent.service.VolcengineAgentPlanClient;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,15 +10,9 @@ import java.util.Map;
 @Component
 public class KnowledgeRetrieveNodeExecutor extends AbstractAgentPlanNodeExecutor {
 
-    private final AgentPlanConfigResolver configResolver;
-    private final VolcengineAgentPlanClient agentPlanClient;
     private final KnowledgeBaseService knowledgeBaseService;
 
-    public KnowledgeRetrieveNodeExecutor(AgentPlanConfigResolver configResolver,
-                                         VolcengineAgentPlanClient agentPlanClient,
-                                         KnowledgeBaseService knowledgeBaseService) {
-        this.configResolver = configResolver;
-        this.agentPlanClient = agentPlanClient;
+    public KnowledgeRetrieveNodeExecutor(KnowledgeBaseService knowledgeBaseService) {
         this.knowledgeBaseService = knowledgeBaseService;
     }
 
@@ -32,16 +23,10 @@ public class KnowledgeRetrieveNodeExecutor extends AbstractAgentPlanNodeExecutor
             throw new IllegalArgumentException("检索知识库节点缺少 query");
         }
 
-        ResolvedAgentPlanConfig config = configResolver.resolve(node, "knowledge");
-        List<Double> embedding = List.of();
-        if (config.apiUrl() != null && config.apiKey() != null && config.model() != null) {
-            embedding = agentPlanClient.createEmbedding(config, query);
-        }
-
         Map<String, Object> output = knowledgeBaseService.retrieve(
                 stringData(node, "knowledgeBaseId", "default"),
                 query,
-                embedding,
+                List.of(),
                 intData(node, "topK", 5),
                 doubleData(node, "scoreThreshold", 0.2)
         );

@@ -14,6 +14,17 @@ import java.util.Map;
 
 /**
  * Parses workflow JSON without relying on FastJSON bean cache for nested classes.
+ *  JSON 字符串
+        ↓ JSON.parseObject
+    JSONObject
+        ↓ parseNodes、parseEdges
+    Java 节点和边
+        ↓
+    WorkflowConfig
+    最后得到：
+    WorkflowConfig
+├── List<WorkflowNode> nodes
+└── List<WorkflowEdge> edges
  */
 @Component
 public class WorkflowConfigParser {

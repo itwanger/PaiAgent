@@ -126,6 +126,52 @@ class ConditionBranchRoutingTest {
         assertEquals(2, response.getNodeResults().size());
     }
 
+    @Test
+    void resolveNodeInputAddsRuntimeContextWhenNodeHasNoIncomingEdges() {
+        WorkflowNode node = createNode("node-input", "input", null);
+        Map<String, Map<String, Object>> nodeOutputs = new HashMap<>();
+        nodeOutputs.put("previous", Map.of("output", "already available"));
+        Map<String, Object> fallbackInput = new LinkedHashMap<>();
+        fallbackInput.put("input", "hello");
+
+        Map<String, Object> resolved = ReflectionTestUtils.invokeMethod(
+                engine,
+                "resolveNodeInput",
+                node,
+                nodeOutputs,
+                Collections.emptyMap(),
+                fallbackInput
+        );
+
+        assertEquals("hello", resolved.get("input"));
+        assertSame(nodeOutputs, resolved.get("__nodeOutputs__"));
+        assertFalse(fallbackInput.containsKey("__nodeOutputs__"), "fallbackInput should not be mutated");
+    }
+
+    @Test
+    void resolveNodeInputKeepsRuntimeContextWhenIncomingSourceHasNoOutput() {
+        WorkflowNode node = createNode("node-target", "output", null);
+        WorkflowEdge missingSourceEdge = createEdge("e1", "node-missing", "node-target", null, null);
+        Map<String, List<WorkflowEdge>> edgesByTarget = Map.of("node-target", List.of(missingSourceEdge));
+        Map<String, Map<String, Object>> nodeOutputs = new HashMap<>();
+        nodeOutputs.put("other-node", Map.of("output", "global output"));
+        Map<String, Object> fallbackInput = new LinkedHashMap<>();
+        fallbackInput.put("input", "fallback");
+
+        Map<String, Object> resolved = ReflectionTestUtils.invokeMethod(
+                engine,
+                "resolveNodeInput",
+                node,
+                nodeOutputs,
+                edgesByTarget,
+                fallbackInput
+        );
+
+        assertEquals("fallback", resolved.get("input"));
+        assertSame(nodeOutputs, resolved.get("__nodeOutputs__"));
+        assertFalse(fallbackInput.containsKey("__nodeOutputs__"), "fallbackInput should not be mutated");
+    }
+
     // --- Workflow Builders ---
 
     private Workflow buildConditionalWorkflow() {

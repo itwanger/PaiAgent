@@ -148,14 +148,16 @@ public class AgentPlanConfigResolver {
     }
 
     public ResolvedAgentPlanConfig resolveKnowledgeConfig(Long configId, String modelOverride) {
-        LLMGlobalConfig globalConfig = configId != null ? llmGlobalConfigService.getById(configId) : null;
+        LLMGlobalConfig globalConfig = configId != null
+                ? llmGlobalConfigService.getById(configId)
+                : llmGlobalConfigService.getDefaultConfig("volcengine_agent_plan");
         String embeddingModel = firstText(
                 modelOverride,
                 globalConfig != null ? globalConfig.getEmbeddingModel() : null,
                 DEFAULT_EMBEDDING_MODEL
         );
         return new ResolvedAgentPlanConfig(
-                configId,
+                globalConfig != null ? globalConfig.getId() : configId,
                 canonicalizeProvider(firstText(globalConfig != null ? globalConfig.getProvider() : null, "volcengine_agent_plan")),
                 globalConfig != null ? globalConfig.getApiUrl() : null,
                 globalConfig != null ? globalConfig.getApiKey() : null,

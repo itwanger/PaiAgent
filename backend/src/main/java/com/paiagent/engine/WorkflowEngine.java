@@ -56,7 +56,6 @@ public class WorkflowEngine implements WorkflowExecutor {
     @Override
     public ExecutionResponse executeWithCallback(Workflow workflow, String inputData, Consumer<ExecutionEvent> eventCallback) {
         long startTime = System.currentTimeMillis();
-        
         WorkflowConfig config = workflowConfigParser.parse(workflow.getFlowData());
         List<WorkflowNode> sortedNodes = dagParser.parse(config);
         List<WorkflowEdge> edges = config.getEdges() != null ? config.getEdges() : new ArrayList<>();
@@ -280,7 +279,7 @@ public class WorkflowEngine implements WorkflowExecutor {
     }
     
     /**
-     * 解析节点输入：如果存在已执行的前驱节点输出，使用前驱节点输出作为输入
+     * 根据前置节点输出解析节点输入，并注入工作流运行时上下文。
      */
     private Map<String, Object> resolveNodeInput(WorkflowNode node,
                                                    Map<String, Map<String, Object>> nodeOutputs,
@@ -288,7 +287,7 @@ public class WorkflowEngine implements WorkflowExecutor {
                                                    Map<String, Object> fallbackInput) {
         List<WorkflowEdge> incomingEdges = edgesByTarget.get(node.getId());
         if (incomingEdges == null || incomingEdges.isEmpty()) {
-            return fallbackInput;
+            return withRuntimeContext(fallbackInput, nodeOutputs);
         }
         Map<String, Object> resolved = new LinkedHashMap<>();
         for (WorkflowEdge edge : incomingEdges) {
@@ -298,10 +297,19 @@ public class WorkflowEngine implements WorkflowExecutor {
             }
         }
         if (resolved.isEmpty()) {
-            return fallbackInput;
+            return withRuntimeContext(fallbackInput, nodeOutputs);
         }
-        resolved.put("__nodeOutputs__", nodeOutputs);
-        return resolved;
+        return withRuntimeContext(resolved, nodeOutputs);
+    }
+
+    private Map<String, Object> withRuntimeContext(Map<String, Object> input,
+                                                   Map<String, Map<String, Object>> nodeOutputs) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (input != null) {
+            result.putAll(input);
+        }
+        result.put("__nodeOutputs__", nodeOutputs);
+        return result;
     }
     
     /**
@@ -390,7 +398,6 @@ public class WorkflowEngine implements WorkflowExecutor {
         executionRecordMapper.insert(record);
         return record;
     }
-
     private EdgeIndexes buildEdgeIndexes(List<WorkflowEdge> edges) {
         Map<String, List<WorkflowEdge>> edgesBySource = new HashMap<>();
         Map<String, List<WorkflowEdge>> edgesByTarget = new HashMap<>();

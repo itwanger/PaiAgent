@@ -1,0 +1,89 @@
+# 启动示例：docker compose --env-file backend/.env -f compose.dev.yml up -d
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: paiagent-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: paiagent
+      # 本地密码从项目根目录的 .env 注入，缺失时拒绝启动。
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:?请设置 MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - paiagent_mysql_data:/var/lib/mysql
+      - ./backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: paiagent-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - paiagent_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: paiagent-pgvector
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paiagent_vector
+      POSTGRES_USER: paiagent
+      # 本地密码从项目根目录的 .env 注入，缺失时拒绝启动。
+      POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:?请设置 RAG_POSTGRES_PASSWORD}
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - paiagent_pgvector_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/schema-pgvector.sql:/docker-entrypoint-initdb.d/01-pgvector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paiagent -d paiagent_vector"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: paiagent-rustfs
+    restart: unless-stopped
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: "*"
+      # 对象存储凭据从项目根目录的 .env 注入，禁止提交默认凭据。
+      RUSTFS_ACCESS_KEY: ${MINIO_ACCESS_KEY:?请设置 MINIO_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${MINIO_SECRET_KEY:?请设置 MINIO_SECRET_KEY}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - paiagent_rustfs_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  paiagent_mysql_data:
+  paiagent_redis_data:
+  paiagent_pgvector_data:
+  paiagent_rustfs_data:

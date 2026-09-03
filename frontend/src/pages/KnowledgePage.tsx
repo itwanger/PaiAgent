@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Form, Input, InputNumber, List, Modal, Popconfirm, Progress, Select, Space, Table, Tabs, Tag, Upload, message } from 'antd';
+import { useEffect, useState } from 'react';
+import { Button, Form, Input, InputNumber, List, Modal, Popconfirm, Progress, Space, Table, Tabs, Tag, Upload, message } from 'antd';
 import { ArrowLeftOutlined, CloudUploadOutlined, DatabaseOutlined, FileTextOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,13 +17,12 @@ import {
   searchKnowledgeBase,
   uploadKnowledgeTextFile,
 } from '../api/knowledge';
-import { useLLMConfigStore } from '../store/llmConfigStore';
-import { getProviderLabel, normalizeProviderKey } from '../utils/provider';
 
 const statusColor: Record<string, string> = {
   DRAFT: 'default',
   IMPORTED: 'processing',
   CHUNKED: 'cyan',
+  QUEUED: 'processing',
   RUNNING: 'processing',
   READY: 'success',
   SUCCESS: 'success',
@@ -34,48 +33,15 @@ const statusText: Record<string, string> = {
   DRAFT: '草稿',
   IMPORTED: '已导入',
   CHUNKED: '已分片',
+  QUEUED: '排队中',
   RUNNING: '索引中',
   READY: '可检索',
   SUCCESS: '完成',
   FAILED: '失败',
 };
 
-const getAgentPlanConfigLabel = (config: { provider: string; model?: string; embeddingModel?: string; configName?: string }) => {
-  const providerLabel = getProviderLabel(config.provider);
-  const modelName = config.model?.trim() || config.embeddingModel?.trim() || cleanInternalConfigName(config.configName, config.provider);
-
-  return modelName ? `${providerLabel} · ${modelName}` : providerLabel;
-};
-
-const getAgentPlanConfigHint = (config: { embeddingModel?: string; memoryEnabled?: number }) => [
-  config.embeddingModel ? `向量: ${config.embeddingModel}` : '',
-  config.memoryEnabled === 1 ? '记忆已启用' : '',
-].filter(Boolean).join(' / ');
-
-const cleanInternalConfigName = (configName?: string, provider?: string) => {
-  if (!configName) return '';
-
-  let name = configName.trim();
-  const providerPrefixes = [
-    provider,
-    normalizeProviderKey(provider),
-    'volcengine_agent_plan',
-    'agent_plan',
-    'volcengine',
-    'ark',
-  ].filter(Boolean) as string[];
-
-  const matchedPrefix = providerPrefixes.find((prefix) => name.toLowerCase().startsWith(`${prefix.toLowerCase()}-`));
-  if (matchedPrefix) {
-    name = name.slice(matchedPrefix.length + 1);
-  }
-
-  return name.replace(/-\d{10,}$/, '');
-};
-
 const KnowledgePage = () => {
   const navigate = useNavigate();
-  const { configs: llmConfigs, fetchAllConfigs } = useLLMConfigStore();
   const [bases, setBases] = useState<KnowledgeBase[]>([]);
   const [selectedBaseId, setSelectedBaseId] = useState<number | null>(null);
   const [selectedBase, setSelectedBase] = useState<KnowledgeBase | null>(null);
@@ -91,13 +57,7 @@ const KnowledgePage = () => {
   const [createForm] = Form.useForm();
   const [importForm] = Form.useForm();
 
-  const agentPlanConfigs = useMemo(
-    () => llmConfigs.filter((config) => normalizeProviderKey(config.provider) === 'volcengine_agent_plan'),
-    [llmConfigs]
-  );
-
   useEffect(() => {
-    fetchAllConfigs();
     loadBases();
   }, []);
 
@@ -106,6 +66,15 @@ const KnowledgePage = () => {
       loadBaseDetail(selectedBaseId);
     }
   }, [selectedBaseId]);
+
+  useEffect(() => {
+    if (!selectedBaseId || !selectedBase?.recentTasks?.some((task) => task.status === 'QUEUED' || task.status === 'RUNNING')) return;
+    const timer = window.setInterval(() => {
+      loadBaseDetail(selectedBaseId);
+      loadBases();
+    }, 1500);
+    return () => window.clearInterval(timer);
+  }, [selectedBaseId, selectedBase?.recentTasks]);
 
   const loadBases = async () => {
     setLoading(true);
@@ -152,7 +121,7 @@ const KnowledgePage = () => {
     const values = await importForm.validateFields();
     const result = await importKnowledgeText(selectedBaseId, values);
     if (result.code === 200) {
-      message.success('文本已导入，下一步可预览分片并建立索引');
+      message.success('文本已导入，索引任务已排队');
       setImportOpen(false);
       importForm.resetFields();
       await loadBaseDetail(selectedBaseId);
@@ -161,12 +130,12 @@ const KnowledgePage = () => {
 
   const handleUploadFile = async () => {
     if (!selectedBaseId || !selectedFile) {
-      message.warning('请选择 txt 或 md 文件');
+      message.warning('请选择 PDF、DOCX、TXT 或 MD 文件');
       return;
     }
     const result = await uploadKnowledgeTextFile(selectedBaseId, selectedFile);
     if (result.code === 200) {
-      message.success('文件已导入，下一步可预览分片并建立索引');
+      message.success('文件已导入，索引任务已排队');
       setImportOpen(false);
       setSelectedFile(null);
       await loadBaseDetail(selectedBaseId);
@@ -191,7 +160,7 @@ const KnowledgePage = () => {
       if (task.status === 'FAILED') {
         message.error(task.errorMessage || '索引失败');
       } else {
-        message.success('索引建立完成');
+        message.success(task.status === 'SUCCESS' ? '索引建立完成' : '重建任务已排队');
       }
       await loadBases();
       await loadBaseDetail(selectedBaseId);
@@ -310,7 +279,7 @@ const KnowledgePage = () => {
                 <div><span>文档数</span><strong>{selectedBase.documentCount || 0}</strong></div>
                 <div><span>分片数</span><strong>{selectedBase.chunkCount || 0}</strong></div>
                 <div><span>字符数</span><strong>{selectedBase.charCount || 0}</strong></div>
-                <div><span>切分策略</span><strong>{selectedBase.chunkSize}/{selectedBase.chunkOverlap}</strong></div>
+                <div><span>切分策略</span><strong>{selectedBase.chunkSize} tokens</strong></div>
               </section>
 
               <Tabs
@@ -395,9 +364,8 @@ const KnowledgePage = () => {
 
       <Modal title="新建知识库" open={createOpen} onOk={handleCreate} onCancel={() => setCreateOpen(false)} width={620}>
         <Form form={createForm} layout="vertical" initialValues={{
-          embeddingModel: 'doubao-embedding-vision',
           chunkSize: 800,
-          chunkOverlap: 100,
+          chunkOverlap: 0,
         }}>
           <Form.Item name="name" label="知识库名称" rules={[{ required: true, message: '请输入知识库名称' }]}>
             <Input maxLength={20} placeholder="例如：产品 FAQ" />
@@ -405,29 +373,9 @@ const KnowledgePage = () => {
           <Form.Item name="description" label="知识库描述">
             <Input.TextArea rows={3} maxLength={200} placeholder="说明内容范围、适用工作流和维护规则" />
           </Form.Item>
-          <Form.Item name="configId" label="Agent Plan 配置">
-            <Select allowClear optionLabelProp="label" placeholder="可选。用于建立向量索引">
-              {agentPlanConfigs.map((config) => (
-                <Select.Option key={config.id} value={config.id} label={getAgentPlanConfigLabel(config)}>
-                  <Space direction="vertical" size={0}>
-                    <span>{getAgentPlanConfigLabel(config)}</span>
-                    {getAgentPlanConfigHint(config) && (
-                      <span className="knowledge-muted">{getAgentPlanConfigHint(config)}</span>
-                    )}
-                  </Space>
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
           <Space className="knowledge-form-row" align="start">
-            <Form.Item name="embeddingModel" label="向量模型">
-              <Input placeholder="doubao-embedding-vision" />
-            </Form.Item>
-            <Form.Item name="chunkSize" label="分片长度">
+            <Form.Item name="chunkSize" label="分片长度（tokens）">
               <InputNumber min={100} max={4000} />
-            </Form.Item>
-            <Form.Item name="chunkOverlap" label="重叠长度">
-              <InputNumber min={0} max={1000} />
             </Form.Item>
           </Space>
         </Form>
@@ -460,7 +408,7 @@ const KnowledgePage = () => {
               children: (
                 <div>
                   <Upload.Dragger
-                    accept=".txt,.md,.markdown"
+                    accept=".pdf,.docx,.txt,.md,.markdown"
                     beforeUpload={(file) => {
                       setSelectedFile(file);
                       return false;
@@ -469,7 +417,7 @@ const KnowledgePage = () => {
                   >
                     <p className="ant-upload-drag-icon"><FileTextOutlined /></p>
                     <p className="ant-upload-text">拖拽文本文件到这里，或点击选择文件</p>
-                    <p className="ant-upload-hint">当前版本支持 txt、md、markdown</p>
+                    <p className="ant-upload-hint">支持 PDF、DOCX、TXT、MD，单文件最大 10 MiB</p>
                   </Upload.Dragger>
                   <Button className="knowledge-upload-submit" type="primary" onClick={handleUploadFile}>
                     上传并导入

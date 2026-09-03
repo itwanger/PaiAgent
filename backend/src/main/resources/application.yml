@@ -22,7 +22,7 @@ spring:
       password: ${REDIS_PASSWORD:}
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:paiagent}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:paiagent}?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:}
   jackson:
@@ -33,6 +33,10 @@ spring:
       # 占位配置，实际使用时通过节点配置动态指定
       api-key: ${OPENAI_API_KEY:sk-placeholder}
       base-url: https://api.openai.com
+  servlet:
+    multipart:
+      max-file-size: ${RAG_MAX_FILE_SIZE:10MB}
+      max-request-size: ${RAG_MAX_FILE_SIZE:10MB}
 
 # MyBatis-Plus 配置
 mybatis-plus:
@@ -65,13 +69,45 @@ springdoc:
 # MinIO 配置
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
-  secretKey: ${MINIO_SECRET_KEY:minioadmin}
+  # 访问凭据必须通过环境变量注入，禁止在仓库中提供可用默认值。
+  accessKey: ${MINIO_ACCESS_KEY:}
+  secretKey: ${MINIO_SECRET_KEY:}
   bucketName: paiagent
   publicUrl: ${MINIO_PUBLIC_URL:http://localhost:9000}
 
 # PaiAgent 配置
 paiagent:
+  rag:
+    migration-enabled: ${RAG_MIGRATION_ENABLED:true}
+    datasource:
+      url: ${RAG_POSTGRES_URL:${PAIAGENT_VECTOR_STORE_URL:jdbc:postgresql://localhost:5432/paiagent_vector}}
+      username: ${RAG_POSTGRES_USERNAME:${PAIAGENT_VECTOR_STORE_USERNAME:paiagent}}
+      # 数据库密码必须通过环境变量注入。
+      password: ${RAG_POSTGRES_PASSWORD:${PAIAGENT_VECTOR_STORE_PASSWORD:}}
+    embedding:
+      config-id: ${RAG_EMBEDDING_CONFIG_ID:}
+      model: ${RAG_EMBEDDING_MODEL:doubao-embedding-vision}
+      dimension: ${RAG_EMBEDDING_DIMENSION:1024}
+      batch-size: ${RAG_EMBEDDING_BATCH_SIZE:10}
+    limits:
+      max-file-bytes: ${RAG_MAX_FILE_BYTES:10485760}
+      max-text-chars: ${RAG_MAX_TEXT_CHARS:2000000}
+      max-chunks: ${RAG_MAX_CHUNKS:5000}
+      max-context-chars: ${RAG_MAX_CONTEXT_CHARS:32000}
+    stream:
+      enabled: ${RAG_STREAM_ENABLED:true}
+      key: ${RAG_STREAM_KEY:paiagent:rag:index}
+      group: ${RAG_STREAM_GROUP:paiagent-rag-indexers}
+      consumer: ${RAG_STREAM_CONSUMER:${HOSTNAME:paiagent-local}}
+      poll-delay-ms: ${RAG_STREAM_POLL_DELAY_MS:1000}
+  vector-store:
+    # 已废弃兼容项：RAG 模块固定使用 PostgreSQL。
+    type: ${PAIAGENT_VECTOR_STORE_TYPE:pgvector}
+    url: ${PAIAGENT_VECTOR_STORE_URL:jdbc:postgresql://localhost:5432/paiagent_vector}
+    username: ${PAIAGENT_VECTOR_STORE_USERNAME:paiagent}
+    password: ${PAIAGENT_VECTOR_STORE_PASSWORD:}
+    # 必须与 embedding 模型返回的维度一致；schema-pgvector.sql 也要同步修改。
+    dimension: ${PAIAGENT_VECTOR_STORE_DIMENSION:1024}
   auth:
     # 本地开发未配置 JWT_SECRET 时会自动生成临时强密钥；生产环境请务必显式配置
     jwt-secret: ${JWT_SECRET:}

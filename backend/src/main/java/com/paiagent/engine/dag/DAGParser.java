@@ -18,8 +18,11 @@ public class DAGParser {
      * 解析工作流配置,返回拓扑排序后的节点执行顺序
      */
     public List<WorkflowNode> parse(WorkflowConfig config) {
-        List<WorkflowNode> nodes = config.getNodes();
-        List<WorkflowEdge> edges = config.getEdges();
+        List<WorkflowNode> nodes = config.getNodes() != null ? config.getNodes() : Collections.emptyList();
+        if (nodes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<WorkflowEdge> edges = config.getEdges() != null ? config.getEdges() : new ArrayList<>();
         
         // 构建节点 ID 到节点的映射
         Map<String, WorkflowNode> nodeMap = new HashMap<>();
@@ -52,8 +55,8 @@ public class DAGParser {
         // 检测循环依赖
         detectCycle(dependencies, nodes);
         
-        // 拓扑排序
-        return topologicalSort(nodeMap, dependencies);
+        // 拓扑排序，复用已构建的 dependents
+        return topologicalSort(nodeMap, dependencies, dependents);
     }
     
     /**
@@ -104,15 +107,16 @@ public class DAGParser {
      * 拓扑排序(Kahn 算法)
      */
     private List<WorkflowNode> topologicalSort(Map<String, WorkflowNode> nodeMap, 
-                                                 Map<String, List<String>> dependencies) {
+                                                 Map<String, List<String>> dependencies,
+                                                 Map<String, List<String>> dependents) {
         List<WorkflowNode> result = new ArrayList<>();
-        
+
         // 计算每个节点的入度
         Map<String, Integer> inDegree = new HashMap<>();
         for (String nodeId : nodeMap.keySet()) {
             inDegree.put(nodeId, dependencies.get(nodeId).size());
         }
-        
+
         // 找出所有入度为 0 的节点(起始节点)
         Queue<String> queue = new LinkedList<>();
         for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
@@ -120,24 +124,12 @@ public class DAGParser {
                 queue.offer(entry.getKey());
             }
         }
-        
-        // 构建反向依赖图(用于拓扑排序)
-        Map<String, List<String>> dependents = new HashMap<>();
-        for (String nodeId : nodeMap.keySet()) {
-            dependents.put(nodeId, new ArrayList<>());
-        }
-        for (Map.Entry<String, List<String>> entry : dependencies.entrySet()) {
-            String target = entry.getKey();
-            for (String source : entry.getValue()) {
-                dependents.get(source).add(target);
-            }
-        }
-        
-        // Kahn 算法执行拓扑排序
+
+        // Kahn 算法执行拓扑排序，直接使用传入的 dependents
         while (!queue.isEmpty()) {
             String nodeId = queue.poll();
             result.add(nodeMap.get(nodeId));
-            
+
             // 将该节点的所有后继节点的入度减 1
             List<String> deps = dependents.get(nodeId);
             if (deps != null) {
@@ -150,12 +142,12 @@ public class DAGParser {
                 }
             }
         }
-        
+
         // 如果排序后的节点数小于总节点数,说明存在循环依赖
         if (result.size() != nodeMap.size()) {
             throw new RuntimeException("工作流存在循环依赖,无法完成拓扑排序");
         }
-        
+
         return result;
     }
 }

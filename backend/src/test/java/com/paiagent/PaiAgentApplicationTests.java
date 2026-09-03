@@ -11,7 +11,9 @@ import org.springframework.boot.test.context.SpringBootTest;
         "minio.bucketName=paiagent",
         "minio.publicUrl=http://localhost:9000",
         "spring.ai.openai.api-key=sk-test-placeholder",
-        "spring.datasource.password=123456"
+        "spring.datasource.password=${MYSQL_PASSWORD:}",
+        "paiagent.rag.migration-enabled=false",
+        "paiagent.rag.stream.enabled=false"
 })
 class PaiAgentApplicationTests {
 
